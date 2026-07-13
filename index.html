@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="2BE">
+<meta name="theme-color" content="#ffffff">
 <title>2BE — Prototyp v2</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
@@ -17,13 +22,19 @@
     background:#e8e8e8;display:flex;justify-content:center;color:var(--black);
   }
   #app{
-    width:100%;max-width:420px;height:100dvh;background:var(--white);
+    width:100%;max-width:420px;height:100vh;height:100dvh;background:var(--white);
     display:flex;flex-direction:column;position:relative;overflow:hidden;
     box-shadow:0 0 40px rgba(0,0,0,.15);
   }
+  /* Auf Smartphones: volle Breite, kein Rahmen, kein Schatten */
+  @media (max-width:520px){
+    body{background:var(--white)}
+    #app{max-width:none;box-shadow:none}
+  }
   header{
-    height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;
-    padding:0 16px;border-bottom:2px solid var(--black);background:var(--white);z-index:20;
+    min-height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;padding-top:env(safe-area-inset-top);
+    border-bottom:2px solid var(--black);background:var(--white);z-index:20;
   }
   .logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
   .logo span{background:var(--yellow);padding:0 4px}
