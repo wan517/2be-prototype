@@ -591,7 +591,8 @@ function share(id){
   const e=EVENTS.find(x=>x.id===id);
   const url = new URL(`e/${id}.html`, location.href).href;
   if(navigator.share){
-    navigator.share({title:`${e.title} ${e.sub}`,text:`${e.day} ${e.date}, ${e.time} — ${e.addr1}, ${e.addr2}`,url}).catch(()=>{});
+    // Nur die URL teilen: iMessage & Co. zeigen dann die grosse Preview-Karte
+    navigator.share({url}).catch(()=>{});
   } else if(navigator.clipboard){
     navigator.clipboard.writeText(url); toast("Link kopiert — auch ohne App öffenbar");
   }
