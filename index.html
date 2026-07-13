@@ -101,8 +101,8 @@
   }
   .chip.on{background:var(--fg);color:var(--bg)}
   /* cards */
-  .feed{padding:16px;display:flex;flex-direction:column;gap:20px}
-  .card{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a;cursor:pointer}
+  .feed{padding:14px;display:flex;flex-direction:column;gap:14px}
+  .card{position:relative;aspect-ratio:4/3;overflow:hidden;background:#8a8a8a;cursor:pointer}
   .card img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
   html[data-theme="dark"] .card img{filter:grayscale(20%) contrast(1.05) brightness(.92)}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -110,15 +110,15 @@
   .bar{position:absolute;left:0;right:0;background:var(--faded);padding:10px 14px;
     display:flex;justify-content:space-between;align-items:flex-start}
   .bar.top{top:0}
-  .bar.bottom{bottom:0;align-items:flex-end;min-height:64px}
-  .ev-title{font-size:19px;font-weight:800;line-height:1.05;text-transform:uppercase;color:var(--fg)}
-  .ev-sub{font-size:15px;font-weight:400;text-transform:uppercase;color:var(--sub)}
-  .meta{font-size:11.5px;font-weight:700;text-transform:uppercase;line-height:1.35;color:var(--fg)}
+  .bar.bottom{bottom:0;align-items:flex-end;min-height:54px}
+  .ev-title{font-size:17px;font-weight:800;line-height:1.05;text-transform:uppercase;color:var(--fg)}
+  .ev-sub{font-size:13px;font-weight:400;text-transform:uppercase;color:var(--sub)}
+  .meta{font-size:10.5px;font-weight:700;text-transform:uppercase;line-height:1.35;color:var(--fg)}
   .meta.right{text-align:right}
   .meta .light{font-weight:400}
-  .price-tag{position:absolute;top:58px;right:0;background:var(--fg);color:var(--bg);
+  .price-tag{position:absolute;top:52px;right:0;background:var(--fg);color:var(--bg);
     font-size:11px;font-weight:700;padding:4px 8px;letter-spacing:.5px}
-  .live-tag{position:absolute;top:58px;left:0;background:var(--yellow);color:#111;
+  .live-tag{position:absolute;top:52px;left:0;background:var(--yellow);color:#111;
     font-size:11px;font-weight:800;padding:4px 8px;letter-spacing:.5px}
   .card-actions{display:flex;gap:10px;align-items:center}
   .icon-btn{background:none;border:none;cursor:pointer;padding:2px;line-height:0}
@@ -589,7 +589,7 @@ function surprise(){
 }
 function share(id){
   const e=EVENTS.find(x=>x.id===id);
-  const url=`https://2be.app/e/${id}`;
+  const url = new URL(`e/${id}.html`, location.href).href;
   if(navigator.share){
     navigator.share({title:`${e.title} ${e.sub}`,text:`${e.day} ${e.date}, ${e.time} — ${e.addr1}, ${e.addr2}`,url}).catch(()=>{});
   } else if(navigator.clipboard){
@@ -614,6 +614,9 @@ initTheme();
 initSheet();
 setSheet("half", false);
 renderAll();
+// Geteilter Link? Direkt das Event öffnen
+const sharedId = Number(new URLSearchParams(location.search).get("event"));
+if(sharedId && EVENTS.some(e=>e.id===sharedId)) openDetail(sharedId);
 </script>
 </body>
 </html>
