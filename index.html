@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>2BE — Prototyp v2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    --black:#111; --white:#fff; --yellow:#FFE01A; --grey:#f2f2f2;
+    --faded:rgba(255,255,255,.85);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:#e8e8e8;display:flex;justify-content:center;color:var(--black);
+  }
+  #app{
+    width:100%;max-width:420px;height:100dvh;background:var(--white);
+    display:flex;flex-direction:column;position:relative;overflow:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,.15);
+  }
+  header{
+    height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;border-bottom:2px solid var(--black);background:var(--white);z-index:20;
+  }
+  .logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
+  .logo span{background:var(--yellow);padding:0 4px}
+  .city{font-size:12px;font-weight:700;letter-spacing:1px}
+  .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
+  .view.active{display:flex}
+  #view-find{overflow:hidden}
+  #findScroll{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  /* map */
+  #mapWrap{height:200px;flex:none;position:relative;border-bottom:2px solid var(--black);transition:height .25s;z-index:1}
+  #mapWrap.big{height:calc(100% - 0px)}
+  #map{height:100%;width:100%}
+  .map-btns{position:absolute;top:10px;right:10px;z-index:800;display:flex;gap:8px}
+  .mbtn{
+    background:var(--white);border:2px solid var(--black);font-weight:800;font-size:12px;
+    letter-spacing:1px;padding:8px 12px;cursor:pointer;font-family:inherit;
+  }
+  .mbtn.on{background:var(--yellow)}
+  .mbtn.on::before{content:"● ";color:#d40000}
+  /* filters */
+  .filters{
+    display:flex;gap:8px;padding:12px 16px;overflow-x:auto;flex:none;
+    scrollbar-width:none;border-bottom:1px solid #ddd;background:var(--white);
+  }
+  .filters::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none;border:1.5px solid var(--black);background:var(--white);font-size:11px;
+    font-weight:700;letter-spacing:.5px;padding:7px 12px;cursor:pointer;
+    text-transform:uppercase;font-family:inherit;
+  }
+  .chip.on{background:var(--black);color:var(--white)}
+  /* cards */
+  .feed{padding:16px;display:flex;flex-direction:column;gap:20px}
+  .card{position:relative;aspect-ratio:1/1;overflow:hidden;background:#ccc;cursor:pointer}
+  .card img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
+  .bar{position:absolute;left:0;right:0;background:var(--faded);padding:10px 14px;
+    display:flex;justify-content:space-between;align-items:flex-start}
+  .bar.top{top:0}
+  .bar.bottom{bottom:0;align-items:flex-end;min-height:64px}
+  .ev-title{font-size:19px;font-weight:800;line-height:1.05;text-transform:uppercase}
+  .ev-sub{font-size:15px;font-weight:400;text-transform:uppercase;color:#222}
+  .meta{font-size:11.5px;font-weight:700;text-transform:uppercase;line-height:1.35}
+  .meta.right{text-align:right}
+  .meta .light{font-weight:400}
+  .price-tag{position:absolute;top:58px;right:0;background:var(--black);color:var(--white);
+    font-size:11px;font-weight:700;padding:4px 8px;letter-spacing:.5px}
+  .live-tag{position:absolute;top:58px;left:0;background:var(--yellow);color:var(--black);
+    font-size:11px;font-weight:800;padding:4px 8px;letter-spacing:.5px}
+  .card-actions{display:flex;gap:10px;align-items:center}
+  .icon-btn{background:none;border:none;cursor:pointer;padding:2px;line-height:0}
+  .icon-btn svg{width:22px;height:22px;stroke:var(--black);fill:none;stroke-width:2}
+  .icon-btn.saved svg{fill:var(--black)}
+  .empty{padding:48px 24px;text-align:center;font-size:14px;color:#666;line-height:1.6}
+  /* detail overlay */
+  #detail{
+    position:absolute;inset:0;background:var(--white);z-index:40;display:none;
+    flex-direction:column;overflow-y:auto;
+  }
+  #detail.open{display:flex}
+  .d-imgwrap{position:relative;flex:none}
+  .d-imgwrap img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
+  .d-close{
+    position:absolute;top:12px;left:12px;background:var(--white);border:2px solid var(--black);
+    width:36px;height:36px;font-size:18px;font-weight:800;cursor:pointer;z-index:5;font-family:inherit;
+  }
+  .d-body{padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
+  .d-title{font-size:26px;font-weight:800;text-transform:uppercase;line-height:1.05}
+  .d-sub{font-size:18px;text-transform:uppercase;color:#444}
+  .d-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:2px solid var(--black);
+    border-bottom:2px solid var(--black);padding:14px 0}
+  .d-grid .meta{font-size:13px}
+  .d-desc{font-size:14px;line-height:1.6;color:#333}
+  .d-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .d-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    border:1.5px solid var(--black);padding:4px 8px}
+  .d-actions{display:flex;gap:10px}
+  .d-actions button,.d-actions a{
+    flex:1;border:2px solid var(--black);background:var(--white);font-weight:800;
+    font-size:13px;letter-spacing:.5px;padding:13px 0;cursor:pointer;text-transform:uppercase;
+    text-align:center;text-decoration:none;color:var(--black);font-family:inherit;
+  }
+  .d-actions button.primary{background:var(--black);color:var(--white)}
+  .d-actions button.saved-state{background:var(--yellow);color:var(--black)}
+  .d-livebar{background:var(--yellow);font-weight:800;font-size:12px;letter-spacing:1px;
+    padding:8px 16px;text-transform:uppercase}
+  /* timeline */
+  .timeline{padding:24px 16px 24px 24px}
+  .tl-head{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
+  .tl-group{position:relative;padding-left:56px;padding-bottom:28px;border-left:2px solid var(--black);margin-left:8px}
+  .tl-group:last-child{border-left-color:transparent}
+  .tl-date{position:absolute;left:-22px;top:-4px;width:44px;height:44px;border-radius:50%;
+    background:var(--white);border:2px solid var(--black);display:flex;align-items:center;
+    justify-content:center;font-size:11px;font-weight:800;text-align:center;line-height:1.1}
+  .tl-day{font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:10px;padding-top:6px;color:#555}
+  .tl-event{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;cursor:pointer}
+  .tl-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--black);flex:none;background:var(--black)}
+  .tl-event .t{font-weight:600}
+  .tl-event .x{margin-left:auto;font-size:11px;color:#999;font-weight:700;letter-spacing:.5px}
+  /* profile */
+  .profile{padding:24px 16px}
+  .p-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
+    border-bottom:1px solid #ddd;font-size:14px;font-weight:600}
+  .p-row .val{font-weight:400;color:#666}
+  .lang{display:flex;gap:6px}
+  .lang button{border:1.5px solid var(--black);background:var(--white);font-size:11px;
+    font-weight:700;padding:5px 9px;cursor:pointer;font-family:inherit}
+  .lang button.on{background:var(--black);color:var(--white)}
+  .p-note{margin-top:24px;font-size:12px;color:#999;line-height:1.6}
+  /* nav */
+  nav{height:64px;flex:none;display:flex;border-top:2px solid var(--black);background:var(--white);
+    z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700;
+    letter-spacing:1px;color:#999;text-transform:uppercase;font-family:inherit}
+  nav button svg{width:24px;height:24px;stroke:#999;fill:none;stroke-width:2}
+  nav button.active{color:var(--black)}
+  nav button.active svg{stroke:var(--black)}
+  nav button .badge{position:relative}
+  nav button .count{position:absolute;top:-4px;right:-10px;background:var(--yellow);color:var(--black);
+    font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;padding:0 3px}
+  .toast{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);background:var(--black);
+    color:var(--white);font-size:12px;font-weight:600;padding:10px 16px;opacity:0;
+    transition:opacity .25s;pointer-events:none;z-index:50;white-space:nowrap}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><span>2BE</span></div>
+    <div class="city">BERN ▾</div>
+  </header>
+
+  <!-- FIND -->
+  <div class="view active" id="view-find">
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div class="map-btns">
+        <button class="mbtn" id="nowBtn" onclick="toggleNow()">JETZT</button>
+        <button class="mbtn" id="expandBtn" onclick="toggleMap()">⤢</button>
+      </div>
+    </div>
+    <div id="findScroll">
+      <div class="filters" id="filters"></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <!-- 2BE saved -->
+  <div class="view" id="view-saved">
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view" id="view-profile">
+    <div class="profile">
+      <div class="p-row"><span>Sprache</span>
+        <div class="lang"><button class="on">DE</button><button>EN</button><button>FR</button></div>
+      </div>
+      <div class="p-row"><span>Stadt</span><span class="val">Bern</span></div>
+      <div class="p-row"><span>Benachrichtigungen</span><span class="val">Aus</span></div>
+      <div class="p-row"><span>Event einreichen</span><span class="val">→</span></div>
+      <div class="p-note">Prototyp v2 — Profil, Sprachen und Submit sind angedeutet. Favoriten werden lokal im Browser gespeichert.</div>
+    </div>
+  </div>
+
+  <!-- DETAIL OVERLAY -->
+  <div id="detail"></div>
+
+  <nav>
+    <button id="nav-saved" onclick="show('saved')">
+      <span class="badge"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg><span class="count" id="savedCount" style="display:none">0</span></span>
+      2be
+    </button>
+    <button id="nav-find" class="active" onclick="show('find')">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      find
+    </button>
+    <button id="nav-profile" onclick="show('profile')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+      profile
+    </button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ================= Daten =================
+// Termine werden relativ zu HEUTE erzeugt, damit die Demo immer aktuell wirkt.
+// Später kommen die Events aus Supabase.
+const DAYS = ["SONNTAG","MONTAG","DIENSTAG","MITTWOCH","DONNERSTAG","FREITAG","SAMSTAG"];
+const MONTHS = ["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"];
+
+function makeEvent(o){
+  const start = new Date();
+  start.setDate(start.getDate()+o.offset);
+  start.setHours(o.h, 0, 0, 0);
+  const end = new Date(start.getTime() + o.dur*3600*1000);
+  const p = n => String(n).padStart(2,"0");
+  return {...o,
+    start, end,
+    day: DAYS[start.getDay()],
+    date: p(start.getDate())+". "+MONTHS[start.getMonth()],
+    sort: start.toISOString().slice(0,10),
+    time: p(o.h)+".00 – "+p(end.getHours())+".00",
+  };
+}
+
+const EVENTS = [
+ {id:1, title:"MATO : SOUSSOL", sub:"SOUNDSYSTEM", tags:["night"], offset:0, h:new Date().getHours()-1, dur:6,
+  addr1:"KÄFIGTURM 43", addr2:"3011 BERN", price:"15.-", lat:46.9481, lng:7.4444, city:"bern",
+  desc:"Soundsystem-Nacht im Untergeschoss. Dub, Bass und ein Raum, der bis fünf Uhr morgens nicht leer wird.",
+  ig:"https://www.instagram.com/2be.app", seed:"matosound"},
+ {id:2, title:"ZAHYR FEST", sub:"OPEN AIR", tags:["night","art"], offset:4, h:22, dur:5,
+  addr1:"MONBIJOUPARK", addr2:"3007 BERN", price:"FREE", lat:46.9412, lng:7.4342, city:"bern",
+  desc:"Open Air unter dem Pavillon im Monbijoupark. Lokale DJs, freier Eintritt, solange der Park mitmacht.",
+  ig:"https://www.instagram.com/2be.app", seed:"zahyr"},
+ {id:3, title:"SCRYPT", sub:"POP UP", tags:["fashion","popup"], offset:5, h:14, dur:4,
+  addr1:"EIGERPLATZ 5", addr2:"3007 BERN", price:null, lat:46.9369, lng:7.4297, city:"bern",
+  desc:"Berner Streetwear-Label mit neuer Kollektion. Ein Tag, ein Raum, limitierte Stückzahlen.",
+  ig:"https://www.instagram.com/2be.app", seed:"scrypt2"},
+ {id:4, title:"VÔN CAMPBELL", sub:"POP UP", tags:["fashion","popup"], offset:5, h:14, dur:4,
+  addr1:"KRAMGASSE 12", addr2:"3011 BERN", price:null, lat:46.9479, lng:7.4515, city:"bern",
+  desc:"Pop-up in der Altstadt — Kollektion, Musik und der Hund ist auch dabei.",
+  ig:"https://www.instagram.com/2be.app", seed:"voncamp"},
+ {id:5, title:"GROSSE HALLE", sub:"FLOHMI", tags:["thrift"], offset:6, h:10, dur:6,
+  addr1:"NEUBRÜCKSTRASSE 8", addr2:"3012 BERN", price:"FREE", lat:46.9528, lng:7.4389, city:"bern",
+  desc:"Der Flohmi in der Grossen Halle. Platten, Kleider, Fotos, Zeug das man nicht sucht und trotzdem heimnimmt.",
+  ig:"https://www.instagram.com/2be.app", seed:"flohmi"},
+ {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9, h:12, dur:6,
+  addr1:"SULGENAUWEG 3", addr2:"3007 BERN", price:null, lat:46.9387, lng:7.4407, city:"bern",
+  desc:"Summer Sale im Hinterhof. Archive-Pieces und Kaffee.",
+  ig:"https://www.instagram.com/2be.app", seed:"snabba"},
+ {id:7, title:"MIDAS", sub:"OPENING POP UP", tags:["popup","bar"], offset:10, h:17, dur:5,
+  addr1:"SPITALGASSE 2", addr2:"3011 BERN", price:null, lat:46.9477, lng:7.4408, city:"bern",
+  desc:"Eröffnung des neuen Pop-up-Spaces an der Spitalgasse. Drinks ab 17 Uhr.",
+  ig:"https://www.instagram.com/2be.app", seed:"midas"},
+ {id:8, title:"POPPYST4R", sub:"POP UP", tags:["art","popup"], offset:13, h:17, dur:5,
+  addr1:"BELLEVUESTRASSE 5", addr2:"3095 SPIEGEL", price:null, lat:46.9262, lng:7.4312, city:"bern",
+  desc:"Kunst- und Fashion-Crossover im Spiegel. Ein Abend, danach ist es wieder weg.",
+  ig:"https://www.instagram.com/2be.app", seed:"poppy"},
+].map(makeEvent);
+
+const CATS = [
+  {key:"all", label:"Alle"},
+  {key:"night", label:"Night Out"},
+  {key:"fashion", label:"Fashion"},
+  {key:"thrift", label:"Flohmi / Thrift"},
+  {key:"art", label:"Art"},
+  {key:"popup", label:"Pop Ups"},
+  {key:"bar", label:"Bar / Café"},
+];
+
+// ================= State =================
+let state = { cat:"all", now:false, saved:new Set(), view:"find", bigMap:false };
+try{
+  const s = JSON.parse(localStorage.getItem("2be_saved")||"[]");
+  state.saved = new Set(s);
+}catch(e){}
+let map, markers = [];
+
+// ================= Helpers =================
+const $ = id => document.getElementById(id);
+const bmSvg = '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg>';
+const shSvg = '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>';
+
+const isLive = e => { const n = new Date(); return n >= e.start && n <= e.end; };
+const img = (e,s) => `https://picsum.photos/seed/${e.seed}/${s}/${s}?grayscale`;
+
+function filtered(){
+  return EVENTS
+    .filter(e => (state.cat==="all" || e.tags.includes(state.cat)) && (!state.now || isLive(e)))
+    .sort((a,b)=>a.start-b.start);
+}
+function persist(){
+  try{ localStorage.setItem("2be_saved", JSON.stringify([...state.saved])); }catch(e){}
+}
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+// ================= Render =================
+function renderFilters(){
+  $("filters").innerHTML = CATS.map(c =>
+    `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${c.label}</button>`).join("");
+}
+
+function renderFeed(){
+  const list = filtered();
+  $("feed").innerHTML = list.length ? list.map(e => `
+    <div class="card" id="card-${e.id}" onclick="openDetail(${e.id})">
+      <img src="${img(e,700)}" alt="" loading="lazy">
+      <div class="bar top">
+        <div>
+          <div class="ev-title">${e.title}</div>
+          <div class="ev-sub">${e.sub}</div>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="Teilen">${shSvg}</button>
+          <button class="icon-btn ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="Speichern">${bmSvg}</button>
+        </div>
+      </div>
+      ${e.price?`<div class="price-tag">${e.price}</div>`:""}
+      ${isLive(e)?`<div class="live-tag">LIVE</div>`:""}
+      <div class="bar bottom">
+        <div class="meta">${e.day}<br>${e.date}<br><span class="light">${e.time}</span></div>
+        <div class="meta right">${e.addr1}<br>${e.addr2}</div>
+      </div>
+    </div>`).join("")
+  : `<div class="empty">Gerade läuft nichts${state.cat!=="all"?" in dieser Kategorie":""}.<br>Filter anpassen oder «JETZT» ausschalten.</div>`;
+}
+
+function renderMap(){
+  markers.forEach(m=>m.remove()); markers=[];
+  filtered().forEach(e => {
+    const live = isLive(e);
+    const m = L.circleMarker([e.lat,e.lng],{
+      radius:live?11:9, color:"#111", weight:2,
+      fillColor:live?"#d40000":"#FFE01A", fillOpacity:1
+    }).addTo(map);
+    m.bindPopup(`<b>${e.title}</b> ${e.sub}<br>${e.day} ${e.date}, ${e.time}`);
+    m.on("popupopen", ()=>{ /* noop */ });
+    m.on("click", ()=>{ if(!state.bigMap){ const c=$("card-"+e.id); if(c) c.scrollIntoView({behavior:"smooth",block:"center"}); } });
+    markers.push(m);
+  });
+}
+
+function renderTimeline(){
+  const saved = EVENTS.filter(e=>state.saved.has(e.id)).sort((a,b)=>a.start-b.start);
+  if(!saved.length){
+    $("timeline").innerHTML = `<div class="tl-head">(My) Upcoming Events</div>
+      <div class="empty">Noch nichts gespeichert.<br>Markiere Events im Feed mit dem Lesezeichen.</div>`;
+    return;
+  }
+  const byDate = {};
+  saved.forEach(e => (byDate[e.sort]=byDate[e.sort]||[]).push(e));
+  $("timeline").innerHTML = `<div class="tl-head">(My) Upcoming Events</div>` +
+    Object.keys(byDate).sort().map(d=>{
+      const evs = byDate[d];
+      const dnum = d.slice(8,10)+"."+d.slice(5,7)+".";
+      return `<div class="tl-group">
+        <div class="tl-date">${dnum}</div>
+        <div class="tl-day">${evs[0].day}</div>
+        ${evs.map(e=>`<div class="tl-event" onclick="openDetail(${e.id})">
+          <span class="tl-dot"></span><span class="t">${e.title} — ${e.sub}</span>
+          <span class="x">${e.time.split(" ")[0]}</span></div>`).join("")}
+      </div>`;
+    }).join("");
+}
+
+function renderNav(){
+  const n=state.saved.size, el=$("savedCount");
+  el.style.display = n?"flex":"none"; el.textContent = n;
+}
+
+function renderDetail(id){
+  const e = EVENTS.find(x=>x.id===id); if(!e) return;
+  const saved = state.saved.has(e.id);
+  $("detail").innerHTML = `
+    <div class="d-imgwrap">
+      <button class="d-close" onclick="closeDetail()">✕</button>
+      <img src="${img(e,800)}" alt="">
+      ${e.price?`<div class="price-tag" style="top:12px">${e.price}</div>`:""}
+    </div>
+    ${isLive(e)?`<div class="d-livebar">● Läuft jetzt gerade</div>`:""}
+    <div class="d-body">
+      <div>
+        <div class="d-title">${e.title}</div>
+        <div class="d-sub">${e.sub}</div>
+      </div>
+      <div class="d-grid">
+        <div class="meta">${e.day}<br>${e.date}<br><span class="light">${e.time}</span></div>
+        <div class="meta right">${e.addr1}<br>${e.addr2}</div>
+      </div>
+      <div class="d-desc">${e.desc}</div>
+      <div class="d-tags">${e.tags.map(t=>`<span class="d-tag">${(CATS.find(c=>c.key===t)||{label:t}).label}</span>`).join("")}</div>
+      <div class="d-actions">
+        <button class="${saved?'saved-state':'primary'}" onclick="toggleSave(${e.id});renderDetail(${e.id})">${saved?"✓ Gespeichert":"Speichern"}</button>
+        <button onclick="share(${e.id})">Teilen</button>
+        <a href="${e.ig}" target="_blank" rel="noopener">Instagram ↗</a>
+      </div>
+    </div>`;
+}
+
+function renderAll(){ renderFilters(); renderFeed(); renderMap(); renderTimeline(); renderNav(); }
+
+// ================= Actions =================
+function setCat(c){ state.cat=c; renderAll(); }
+function toggleNow(){
+  state.now=!state.now;
+  $("nowBtn").classList.toggle("on",state.now);
+  renderAll();
+  if(state.now) toast("Zeigt nur, was jetzt gerade läuft");
+}
+function toggleMap(){
+  state.bigMap=!state.bigMap;
+  $("mapWrap").classList.toggle("big",state.bigMap);
+  $("expandBtn").textContent = state.bigMap?"⤡":"⤢";
+  setTimeout(()=>map.invalidateSize(),260);
+}
+function toggleSave(id){
+  state.saved.has(id)?state.saved.delete(id):state.saved.add(id);
+  persist(); renderAll();
+}
+function share(id){
+  const e=EVENTS.find(x=>x.id===id);
+  const url=`https://2be.app/e/${id}`;
+  if(navigator.share){
+    navigator.share({title:`${e.title} ${e.sub}`,text:`${e.day} ${e.date}, ${e.time} — ${e.addr1}, ${e.addr2}`,url}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(url); toast("Link kopiert — auch ohne App öffenbar");
+  }
+}
+function openDetail(id){ renderDetail(id); $("detail").classList.add("open"); }
+function closeDetail(){ $("detail").classList.remove("open"); renderAll(); }
+function show(v){
+  state.view=v; closeDetail();
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  $("view-"+v).classList.add("active");
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+  $("nav-"+v).classList.add("active");
+  if(v==="find") setTimeout(()=>map.invalidateSize(),50);
+}
+
+// ================= Init =================
+map = L.map("map",{zoomControl:false,attributionControl:false}).setView([46.9445,7.4400],13);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
+renderAll();
+</script>
+</body>
+</html>
