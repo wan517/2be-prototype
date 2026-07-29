@@ -8,19 +8,19 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="2BE">
 <meta name="theme-color" content="#ffffff" id="themeColor">
-<title>2BE — Prototyp v4</title>
+<title>2BE — Prototyp v7</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root{
-    --yellow:#FFE01A;
-    --bg:#ffffff;          /* Hintergrund App */
-    --backdrop:#e8e8e8;    /* Hintergrund Desktop hinter der App */
+    --accent:#7D39EB;      /* Signatur-Akzent (Violett #7D39EB) */
+    --bg:#FDFCF8;          /* Hintergrund App — warm getönt (Tag-Vibe) */
+    --backdrop:#EFEDE6;    /* Hintergrund Desktop hinter der App */
     --fg:#111111;          /* Text & Linien */
     --sub:#222222;         /* Untertitel */
     --muted:#666666;       /* gedämpfter Text */
     --faint:#999999;       /* sehr dezent */
-    --hair:#dddddd;        /* Haarlinien */
-    --faded:rgba(255,255,255,.85); /* Karten-Boxen */
+    --hair:#DEDBD3;        /* Haarlinien, warm */
+    --faded:rgba(253,252,248,.85); /* Karten-Boxen */
   }
   html[data-theme="dark"]{
     --bg:#1c1c1e;
@@ -54,13 +54,9 @@
     border-bottom:2px solid var(--fg);background:var(--bg);z-index:20;
   }
   .logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
-  .logo span{background:var(--yellow);padding:0 4px;color:#111}
+  .logo span{background:var(--accent);padding:0 4px;color:#fff}
   .h-right{display:flex;align-items:center;gap:14px}
   .city{font-size:12px;font-weight:700;letter-spacing:1px}
-  .theme-btn{
-    background:none;border:none;cursor:pointer;font-size:17px;line-height:1;
-    color:var(--fg);padding:4px;font-family:inherit;
-  }
   .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
   .view.active{display:flex}
   #view-find{overflow:hidden;position:relative}
@@ -80,13 +76,38 @@
   .grabber{width:44px;height:5px;border-radius:3px;background:var(--hair)}
   .handle-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
   .sheet-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  /* LIVE-Leiste (kompakt, dezent) */
+  .live-row{display:flex;gap:8px;padding:8px 16px 0;overflow-x:auto;flex:none;
+    scrollbar-width:none;align-items:center}
+  .live-row::-webkit-scrollbar{display:none}
+  .live-head{flex:none}
+  .live-head span{font-size:9px;font-weight:800;letter-spacing:1px;color:#d40000}
+  .live-head .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#d40000;
+    margin-right:4px;vertical-align:middle;animation:livePulse 1.8s infinite}
+  .live-item{flex:none;display:flex;align-items:center;gap:6px;cursor:pointer;
+    border:1px solid var(--hair);padding:3px 9px 3px 4px;border-radius:14px}
+  .live-thumb{width:20px;height:20px;border-radius:50%;object-fit:cover;display:block;
+    filter:grayscale(20%) contrast(1.05)}
+  .live-label{font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;color:var(--muted)}
+  @keyframes livePulse{
+    0%{box-shadow:0 0 0 0 rgba(212,0,0,.45)}
+    70%{box-shadow:0 0 0 9px rgba(212,0,0,0)}
+    100%{box-shadow:0 0 0 0 rgba(212,0,0,0)}
+  }
+  /* Map-Pins */
+  .pin{width:16px;height:16px;border-radius:50%;border:2px solid var(--fg);box-sizing:border-box}
+  .pin.live{width:22px;height:22px;background:#d40000;animation:livePulse 1.6s infinite}
+  /* Countdown-Badge */
+  .soon-tag{position:absolute;top:52px;left:0;background:var(--bg);color:var(--fg);
+    border:1.5px solid var(--fg);font-size:10px;font-weight:800;padding:3px 7px;letter-spacing:.5px}
   #sheet.s-half .sheet-body{padding-bottom:45%}
   #sheet.s-list .sheet-body{padding-bottom:130px}
   .mbtn{
     background:var(--bg);border:2px solid var(--fg);color:var(--fg);font-weight:800;font-size:12px;
     letter-spacing:1px;padding:8px 12px;cursor:pointer;font-family:inherit;
   }
-  .mbtn.on{background:var(--yellow);color:#111;border-color:#111}
+  .mbtn.on{background:var(--accent);color:#fff;border-color:#111}
   .mbtn.on::before{content:"● ";color:#d40000}
   /* filters */
   .filters{
@@ -118,7 +139,7 @@
   .meta .light{font-weight:400}
   .price-tag{position:absolute;top:52px;right:0;background:var(--fg);color:var(--bg);
     font-size:11px;font-weight:700;padding:4px 8px;letter-spacing:.5px}
-  .live-tag{position:absolute;top:52px;left:0;background:var(--yellow);color:#111;
+  .live-tag{position:absolute;top:52px;left:0;background:var(--accent);color:#fff;
     font-size:11px;font-weight:800;padding:4px 8px;letter-spacing:.5px}
   .card-actions{display:flex;gap:10px;align-items:center}
   .icon-btn{background:none;border:none;cursor:pointer;padding:2px;line-height:0}
@@ -145,15 +166,21 @@
   .d-tags{display:flex;gap:6px;flex-wrap:wrap}
   .d-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
     border:1.5px solid var(--fg);padding:4px 8px}
-  .d-actions{display:flex;gap:10px}
+  .rsvp-btn{
+    width:100%;border:2px solid var(--fg);background:var(--fg);color:var(--bg);
+    font-weight:800;font-size:14px;letter-spacing:1px;padding:15px 0;cursor:pointer;
+    text-transform:uppercase;font-family:inherit;
+  }
+  .rsvp-btn.on{background:var(--accent);color:#fff;border-color:#111}
+  .d-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .d-actions button,.d-actions a{
     flex:1;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
     font-size:13px;letter-spacing:.5px;padding:13px 0;cursor:pointer;text-transform:uppercase;
     text-align:center;text-decoration:none;font-family:inherit;
   }
   .d-actions button.primary{background:var(--fg);color:var(--bg)}
-  .d-actions button.saved-state{background:var(--yellow);color:#111;border-color:#111}
-  .d-livebar{background:var(--yellow);color:#111;font-weight:800;font-size:12px;letter-spacing:1px;
+  .d-actions button.saved-state{background:var(--accent);color:#fff;border-color:#111}
+  .d-livebar{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;
     padding:8px 16px;text-transform:uppercase}
   /* timeline */
   .timeline{padding:24px 16px 24px 24px}
@@ -164,10 +191,18 @@
     background:var(--bg);border:2px solid var(--fg);display:flex;align-items:center;
     justify-content:center;font-size:11px;font-weight:800;text-align:center;line-height:1.1}
   .tl-day{font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:10px;padding-top:6px;color:var(--muted)}
-  .tl-event{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;cursor:pointer}
-  .tl-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--fg);flex:none;background:var(--fg)}
-  .tl-event .t{font-weight:600}
-  .tl-event .x{margin-left:auto;font-size:11px;color:var(--faint);font-weight:700;letter-spacing:.5px}
+  .tl-card{
+    display:flex;align-items:stretch;gap:0;margin-bottom:10px;cursor:pointer;
+    border:1.5px solid var(--fg);background:var(--bg);overflow:hidden;
+  }
+  .tl-card img{width:64px;height:64px;object-fit:cover;flex:none;display:block;
+    filter:grayscale(20%) contrast(1.05);border-right:1.5px solid var(--fg)}
+  .tl-info{flex:1;min-width:0;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+  .tl-t{font-size:13px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl-s{font-size:11px;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl-m{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+  .tl-x{flex:none;background:none;border:none;cursor:pointer;padding:0 12px;display:flex;align-items:center}
+  .tl-x svg{width:18px;height:18px;stroke:var(--fg);fill:var(--fg);stroke-width:2}
   /* profile */
   .profile{padding:24px 16px}
   .p-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
@@ -178,14 +213,72 @@
     font-weight:700;padding:5px 9px;cursor:pointer;font-family:inherit}
   .lang button.on{background:var(--fg);color:var(--bg)}
   .p-note{margin-top:24px;font-size:12px;color:var(--faint);line-height:1.6}
-  /* iOS-artiger Switch */
-  .switch{position:relative;width:52px;height:30px;border-radius:16px;background:var(--hair);
-    border:none;cursor:pointer;transition:background-color .35s ease;flex:none}
-  .switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
-    background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.35);
-    transition:transform .35s cubic-bezier(.22,1,.36,1)}
-  .switch.on{background:var(--fg)}
-  .switch.on::after{transform:translateX(22px)}
+  /* submit */
+  #submit{position:absolute;inset:0;background:var(--bg);z-index:900;display:none;
+    flex-direction:column;overflow-y:auto}
+  #submit.open{display:flex}
+  .s-head{flex:none;display:flex;align-items:center;gap:14px;padding:14px 16px;
+    border-bottom:2px solid var(--fg)}
+  .s-head .d-close{position:static}
+  .s-htitle{font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+  .s-body{padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
+  .s-intro{font-size:13px;line-height:1.6;color:var(--muted)}
+  .f-field{display:flex;flex-direction:column;gap:6px}
+  .f-label{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .f-label .opt{font-weight:400;color:var(--faint);letter-spacing:.5px}
+  .f-field input{
+    border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);
+    font-family:inherit;font-size:16px;padding:12px;border-radius:0;width:100%;
+  }
+  .f-field input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .f-field input.err{border-color:#d40000}
+  .f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .f-flyer{
+    border:1.5px dashed var(--fg);min-height:150px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:8px;cursor:pointer;position:relative;
+    overflow:hidden;text-align:center;padding:16px;
+  }
+  .f-flyer.err{border-color:#d40000}
+  .f-flyer.has{border-style:solid;padding:0;min-height:0}
+  .f-flyer img{width:100%;max-height:280px;object-fit:cover;display:block}
+  .f-flyer .fl-icon{font-size:26px;line-height:1}
+  .f-flyer .fl-txt{font-size:11px;font-weight:700;letter-spacing:.5px;
+    text-transform:uppercase;color:var(--muted)}
+  .f-flyer .fl-change{position:absolute;bottom:8px;right:8px;background:var(--bg);
+    border:1.5px solid var(--fg);font-size:10px;font-weight:800;letter-spacing:.5px;
+    padding:5px 8px;text-transform:uppercase;color:var(--fg)}
+  .f-hint{font-size:11px;color:var(--faint);line-height:1.5}
+  .f-err{font-size:11px;font-weight:700;color:#d40000;display:none}
+  .f-err.show{display:block}
+  .s-done{display:none;flex-direction:column;align-items:center;gap:16px;
+    padding:56px 24px;text-align:center}
+  .s-done.show{display:flex}
+  .s-check{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800}
+  .s-done h3{font-size:20px;font-weight:800;text-transform:uppercase}
+  .s-done p{font-size:13px;line-height:1.6;color:var(--muted);max-width:280px}
+  /* ===== Plakatsäule (verstecktes Schmuckstück — Tap aufs Logo) ===== */
+  #saeule{position:absolute;inset:0;z-index:850;display:none;flex-direction:column;overflow:hidden;
+    background:linear-gradient(180deg,#DCE4E8 0%,#EDEAE0 55%,#C9C2B2 78%,#A89F8C 100%)}
+  html[data-theme="dark"] #saeule{
+    background:linear-gradient(180deg,#04060C 0%,#0B1020 50%,#141a2a 75%,#241d10 100%)}
+  #saeule.open{display:flex}
+  .sa-top{flex:none;display:flex;align-items:center;gap:14px;padding:14px 16px;z-index:5}
+  .sa-close{background:var(--bg);border:2px solid var(--fg);color:var(--fg);width:36px;height:36px;
+    font-size:18px;font-weight:800;cursor:pointer;font-family:inherit}
+  .sa-htitle{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--fg)}
+  .sa-hsub{font-size:10px;color:var(--muted);letter-spacing:.5px}
+  .sa-scene{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;
+    user-select:none;-webkit-user-select:none}
+  .sa-scene:active{cursor:grabbing}
+  .sa-scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* Lichtschein hinter der Säule (Nacht) */
+  html[data-theme="dark"] .sa-scene::before{content:"";position:absolute;top:8%;left:50%;
+    transform:translateX(-50%);width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,214,110,.22) 0%,rgba(255,214,110,0) 70%)}
+  /* Die Säule selbst wird per three.js in #saScene gerendert (siehe JS) */
+  .sa-hint{flex:none;text-align:center;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--faint);padding:0 16px 18px}
   /* nav */
   nav{height:64px;flex:none;display:flex;border-top:2px solid var(--fg);background:var(--bg);
     z-index:20;padding-bottom:env(safe-area-inset-bottom)}
@@ -196,7 +289,7 @@
   nav button.active{color:var(--fg)}
   nav button.active svg{stroke:var(--fg)}
   nav button .badge{position:relative}
-  nav button .count{position:absolute;top:-4px;right:-10px;background:var(--yellow);color:#111;
+  nav button .count{position:absolute;top:-4px;right:-10px;background:var(--accent);color:#fff;
     font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;
     display:flex;align-items:center;justify-content:center;padding:0 3px}
   .toast{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);background:var(--fg);
@@ -211,9 +304,8 @@
 <body>
 <div id="app">
   <header>
-    <div class="logo"><span>2BE</span></div>
+    <div class="logo" onclick="openSaeule()" style="cursor:pointer"><span>2BE</span></div>
     <div class="h-right">
-      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Dark Mode">☾</button>
       <div class="city">BERN ▾</div>
     </div>
   </header>
@@ -222,14 +314,15 @@
   <div class="view active" id="view-find">
     <div id="map"></div>
     <div class="map-btns">
-      <button class="mbtn" id="nowBtn" onclick="toggleNow()">JETZT</button>
-      <button class="mbtn" onclick="surprise()" title="Zufälliges Event">🎲</button>
+      <button class="mbtn" id="nowBtn" onclick="toggleNow()" data-i18n="now">JETZT</button>
+      <button class="mbtn" onclick="surprise()" data-i18n-title="random" title="Zufälliges Event">🎲</button>
     </div>
     <div id="sheet" class="snap s-half">
       <div class="handle" id="handle">
         <div class="grabber"></div>
         <div class="handle-label" id="handleLabel">EVENTS</div>
       </div>
+      <div class="live-row" id="liveRow" style="display:none"></div>
       <div class="filters" id="filters"></div>
       <div class="sheet-body">
         <div class="feed" id="feed"></div>
@@ -245,21 +338,96 @@
   <!-- PROFILE -->
   <div class="view" id="view-profile">
     <div class="profile">
-      <div class="p-row"><span>Dark Mode</span>
-        <button class="switch" id="themeSwitch" onclick="toggleTheme()" aria-label="Dark Mode umschalten"></button>
+      <div class="p-row"><span data-i18n="appearance">Erscheinungsbild</span>
+        <div class="lang">
+          <button id="tm-light" onclick="setThemeMode('light')" data-i18n="day">Tag</button>
+          <button id="tm-dark" onclick="setThemeMode('dark')" data-i18n="night">Nacht</button>
+        </div>
       </div>
-      <div class="p-row"><span>Sprache</span>
-        <div class="lang"><button class="on">DE</button><button>EN</button><button>FR</button></div>
+      <div class="p-row"><span data-i18n="language">Sprache</span>
+        <div class="lang" id="langBtns">
+          <button data-lang="de" class="on" onclick="setLang('de')">DE</button>
+          <button data-lang="en" onclick="setLang('en')">EN</button>
+          <button data-lang="fr" onclick="setLang('fr')">FR</button>
+        </div>
       </div>
-      <div class="p-row"><span>Stadt</span><span class="val">Bern</span></div>
-      <div class="p-row"><span>Benachrichtigungen</span><span class="val">Aus</span></div>
-      <div class="p-row"><span>Event einreichen</span><span class="val">→</span></div>
-      <div class="p-note">Prototyp v4 — Profil, Sprachen und Submit sind angedeutet. Favoriten und Dark Mode werden lokal im Browser gespeichert.</div>
+      <div class="p-row"><span data-i18n="city">Stadt</span><span class="val">Bern</span></div>
+      <div class="p-row"><span data-i18n="notifications">Benachrichtigungen</span><span class="val" data-i18n="off">Aus</span></div>
+      <div class="p-row" onclick="openSubmit()" style="cursor:pointer"><span data-i18n="submitEvent">Event einreichen</span><span class="val">→</span></div>
+      <div class="p-note" data-i18n="profileNote">Prototyp v7 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.</div>
     </div>
   </div>
 
   <!-- DETAIL OVERLAY -->
   <div id="detail"></div>
+
+  <!-- SUBMIT OVERLAY -->
+  <div id="submit">
+    <div class="s-head">
+      <button class="d-close" onclick="closeSubmit()">✕</button>
+      <div class="s-htitle" data-i18n="submitEvent">Event einreichen</div>
+    </div>
+    <div class="s-body" id="submitForm">
+      <div class="s-intro" data-i18n="subIntro">Flyer, Titel, Datum, Link — fertig in 30 Sekunden.
+        Das Team prüft jede Einreichung, bevor sie live geht.</div>
+      <div class="f-field">
+        <div class="f-label" data-i18n="lblFlyer">Flyer-Foto</div>
+        <div class="f-flyer" id="flyerBox" onclick="$('flyerInput').click()">
+          <div class="fl-icon">＋</div>
+          <div class="fl-txt" data-i18n="flyerCta">Foto aufnehmen oder hochladen</div>
+        </div>
+        <input type="file" id="flyerInput" accept="image/*" style="display:none" onchange="flyerPicked(this)">
+        <div class="f-err" id="err-flyer" data-i18n="errFlyer">Flyer-Foto fehlt</div>
+      </div>
+      <div class="f-field">
+        <div class="f-label" data-i18n="lblTitle">Titel</div>
+        <input type="text" id="subTitle" data-i18n-ph="phTitle" placeholder="z.B. MATO : SOUSSOL" maxlength="60">
+        <div class="f-err" id="err-title" data-i18n="errTitle">Titel fehlt</div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblDate">Datum</div>
+          <input type="date" id="subDate">
+        </div>
+        <div class="f-field">
+          <div class="f-label"><span data-i18n="lblTime">Zeit</span> <span class="opt" data-i18n="optional">optional</span></div>
+          <input type="time" id="subTime">
+        </div>
+      </div>
+      <div class="f-err" id="err-date" style="margin-top:-12px" data-i18n="errDate">Datum fehlt oder liegt in der Vergangenheit</div>
+      <div class="f-field">
+        <div class="f-label"><span data-i18n="lblLink">Link</span> <span class="opt" data-i18n="optional">optional</span></div>
+        <input type="url" id="subLink" data-i18n-ph="phLink" placeholder="Instagram-Post, Ticketlink …" inputmode="url">
+      </div>
+      <div class="f-field">
+        <div class="f-label" data-i18n="lblEmail">Kontakt-E-Mail</div>
+        <input type="email" id="subEmail" data-i18n-ph="phEmail" placeholder="Für Rückfragen — wird nicht publiziert" inputmode="email">
+        <div class="f-err" id="err-email" data-i18n="errEmail">Gültige E-Mail fehlt</div>
+      </div>
+      <button class="rsvp-btn" onclick="submitEvent()" data-i18n="submit">Einreichen</button>
+      <div class="f-hint" data-i18n="submitHint">Kein Auto-Publish: Live geht nur, was die 2BE-Kuratierung freigibt.
+        Prototyp — die Daten bleiben lokal auf deinem Gerät.</div>
+    </div>
+    <div class="s-done" id="submitDone">
+      <div class="s-check">✓</div>
+      <h3 data-i18n="doneTitle">Eingereicht</h3>
+      <p data-i18n="doneText">Danke! Das Team schaut sich dein Event an und meldet sich per E-Mail, sobald es live ist.</p>
+      <button class="rsvp-btn" style="max-width:280px" onclick="resetSubmit()" data-i18n="doneAgain">Weiteres Event einreichen</button>
+    </div>
+  </div>
+
+  <!-- PLAKATSÄULE (verstecktes Schmuckstück) -->
+  <div id="saeule">
+    <div class="sa-top">
+      <button class="sa-close" onclick="closeSaeule()">✕</button>
+      <div>
+        <div class="sa-htitle" data-i18n="saTitle">Plakatsäule</div>
+        <div class="sa-hsub" data-i18n="saSub">Kuratierte Auswahl der Woche — drehen &amp; entdecken</div>
+      </div>
+    </div>
+    <div class="sa-scene" id="saScene"></div>
+    <div class="sa-hint" data-i18n="saHint">Plakat antippen → Event · Telefonkabine → Event einreichen</div>
+  </div>
 
   <nav>
     <button id="nav-saved" onclick="show('saved')">
@@ -268,11 +436,11 @@
     </button>
     <button id="nav-find" class="active" onclick="show('find')">
       <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-      find
+      <span data-i18n="navFind">find</span>
     </button>
     <button id="nav-profile" onclick="show('profile')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
-      profile
+      <span data-i18n="navProfile">profile</span>
     </button>
   </nav>
 
@@ -282,52 +450,176 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // ================= Daten =================
-const DAYS = ["SONNTAG","MONTAG","DIENSTAG","MITTWOCH","DONNERSTAG","FREITAG","SAMSTAG"];
-const MONTHS = ["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"];
+// ================= i18n (UI-Texte DE/EN/FR) =================
+const I18N = {
+  de:{
+    now:"JETZT", random:"Zufälliges Event", events:"EVENTS", showList:"LISTE ANZEIGEN",
+    appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
+    language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
+    submitEvent:"Event einreichen",
+    profileNote:"Prototyp v7 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.",
+    navFind:"find", navProfile:"profile",
+    subIntro:"Flyer, Titel, Datum, Link — fertig in 30 Sekunden. Das Team prüft jede Einreichung, bevor sie live geht.",
+    lblFlyer:"Flyer-Foto", flyerCta:"Foto aufnehmen oder hochladen", errFlyer:"Flyer-Foto fehlt",
+    lblTitle:"Titel", phTitle:"z.B. MATO : SOUSSOL", errTitle:"Titel fehlt",
+    lblDate:"Datum", lblTime:"Zeit", optional:"optional",
+    errDate:"Datum fehlt oder liegt in der Vergangenheit",
+    lblLink:"Link", phLink:"Instagram-Post, Ticketlink …",
+    lblEmail:"Kontakt-E-Mail", phEmail:"Für Rückfragen — wird nicht publiziert", errEmail:"Gültige E-Mail fehlt",
+    submit:"Einreichen",
+    submitHint:"Kein Auto-Publish: Live geht nur, was die 2BE-Kuratierung freigibt. Prototyp — die Daten bleiben lokal auf deinem Gerät.",
+    doneTitle:"Eingereicht", doneText:"Danke! Das Team schaut sich dein Event an und meldet sich per E-Mail, sobald es live ist.",
+    doneAgain:"Weiteres Event einreichen", change:"Ändern",
+    saTitle:"Plakatsäule", saSub:"Kuratierte Auswahl der Woche — drehen & entdecken",
+    saHint:"Plakat antippen → Event · Tür → einreichen", doorSign:"GET LISTED", doorHint:"Tür öffnen · Event einreichen",
+    emptyNothing:"Gerade läuft nichts", emptyInCat:" in dieser Kategorie",
+    emptyAdjust:"Filter anpassen oder «JETZT» ausschalten.",
+    upcoming:"(Meine) nächsten Events",
+    emptySavedTitle:"Noch nichts gespeichert.", emptySavedText:"Markiere Events im Feed mit dem Lesezeichen.",
+    liveNow:"● Läuft jetzt gerade", going:"✓ Du gehst hin", notGoing:"Ich gehe hin",
+    saved:"✓ Gespeichert", save:"Speichern", share:"Teilen", calendar:"+ Kalender",
+    tShare:"Teilen", tSave:"Speichern", tRemove:"Entfernen",
+    toastNow:"Zeigt nur, was jetzt gerade läuft", toastRsvp:"Bis dann! 🤝",
+    toastCal:"Termin erstellt — im Kalender öffnen", toastShare:"Link kopiert — auch ohne App öffenbar",
+    soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"beginnt bald",
+    cat_all:"Alle", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Other"
+  },
+  en:{
+    now:"NOW", random:"Random event", events:"EVENTS", showList:"SHOW LIST",
+    appearance:"Appearance", day:"Day", night:"Night",
+    language:"Language", city:"City", notifications:"Notifications", off:"Off",
+    submitEvent:"Submit event",
+    profileNote:"Prototype v7 — favourites, RSVP and appearance are stored locally in your browser.",
+    navFind:"find", navProfile:"profile",
+    subIntro:"Flyer, title, date, link — done in 30 seconds. The team reviews every submission before it goes live.",
+    lblFlyer:"Flyer photo", flyerCta:"Take or upload a photo", errFlyer:"Flyer photo missing",
+    lblTitle:"Title", phTitle:"e.g. MATO : SOUSSOL", errTitle:"Title missing",
+    lblDate:"Date", lblTime:"Time", optional:"optional",
+    errDate:"Date is missing or in the past",
+    lblLink:"Link", phLink:"Instagram post, ticket link …",
+    lblEmail:"Contact email", phEmail:"For questions — not published", errEmail:"Valid email missing",
+    submit:"Submit",
+    submitHint:"No auto-publish: only what the 2BE curation approves goes live. Prototype — data stays local on your device.",
+    doneTitle:"Submitted", doneText:"Thanks! The team will look at your event and reach out by email once it's live.",
+    doneAgain:"Submit another event", change:"Change",
+    saTitle:"Poster column", saSub:"Curated pick of the week — spin & discover",
+    saHint:"Tap a poster → event · Door → get listed", doorSign:"GET LISTED", doorHint:"Open the door · submit an event",
+    emptyNothing:"Nothing's on right now", emptyInCat:" in this category",
+    emptyAdjust:"Adjust the filter or turn off «NOW».",
+    upcoming:"(My) Upcoming Events",
+    emptySavedTitle:"Nothing saved yet.", emptySavedText:"Bookmark events in the feed to add them here.",
+    liveNow:"● Happening now", going:"✓ You're going", notGoing:"I'm going",
+    saved:"✓ Saved", save:"Save", share:"Share", calendar:"+ Calendar",
+    tShare:"Share", tSave:"Save", tRemove:"Remove",
+    toastNow:"Showing only what's live right now", toastRsvp:"See you there! 🤝",
+    toastCal:"Event created — open in your calendar", toastShare:"Link copied — opens without the app too",
+    soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"starts soon",
+    cat_all:"All", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Other"
+  },
+  fr:{
+    now:"MAINTENANT", random:"Événement au hasard", events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE",
+    appearance:"Apparence", day:"Jour", night:"Nuit",
+    language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
+    submitEvent:"Proposer un événement",
+    profileNote:"Prototype v7 — favoris, RSVP et apparence sont stockés localement dans ton navigateur.",
+    navFind:"explorer", navProfile:"profil",
+    subIntro:"Flyer, titre, date, lien — prêt en 30 secondes. L'équipe vérifie chaque proposition avant sa publication.",
+    lblFlyer:"Photo du flyer", flyerCta:"Prendre ou importer une photo", errFlyer:"Photo du flyer manquante",
+    lblTitle:"Titre", phTitle:"p.ex. MATO : SOUSSOL", errTitle:"Titre manquant",
+    lblDate:"Date", lblTime:"Heure", optional:"facultatif",
+    errDate:"Date manquante ou dans le passé",
+    lblLink:"Lien", phLink:"Post Instagram, lien billetterie …",
+    lblEmail:"E-mail de contact", phEmail:"Pour toute question — non publié", errEmail:"E-mail valide manquant",
+    submit:"Envoyer",
+    submitHint:"Pas de publication auto : seul ce que la curation 2BE valide passe en ligne. Prototype — les données restent locales sur ton appareil.",
+    doneTitle:"Envoyé", doneText:"Merci ! L'équipe examine ton événement et te recontacte par e-mail dès qu'il est en ligne.",
+    doneAgain:"Proposer un autre événement", change:"Modifier",
+    saTitle:"Colonne Morris", saSub:"Sélection de la semaine — fais tourner & découvre",
+    saHint:"Touche une affiche → événement · Porte → proposer", doorSign:"GET LISTED", doorHint:"Ouvre la porte · propose un événement",
+    emptyNothing:"Rien en ce moment", emptyInCat:" dans cette catégorie",
+    emptyAdjust:"Ajuste le filtre ou désactive «MAINTENANT».",
+    upcoming:"(Mes) prochains événements",
+    emptySavedTitle:"Rien d'enregistré pour l'instant.", emptySavedText:"Ajoute des événements avec le marque-page dans le feed.",
+    liveNow:"● En ce moment", going:"✓ Tu y vas", notGoing:"J'y vais",
+    saved:"✓ Enregistré", save:"Enregistrer", share:"Partager", calendar:"+ Agenda",
+    tShare:"Partager", tSave:"Enregistrer", tRemove:"Retirer",
+    toastNow:"Affiche seulement ce qui se passe maintenant", toastRsvp:"À bientôt ! 🤝",
+    toastCal:"Événement créé — ouvre-le dans ton agenda", toastShare:"Lien copié — s'ouvre même sans l'app",
+    soonMin:"DANS {n} MIN", soonH:"DANS {n} H", icsSoon:"commence bientôt",
+    cat_all:"Tous", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Autres"
+  }
+};
+let LANG = "de";
+try{ LANG = localStorage.getItem("2be_lang") || "de"; }catch(e){}
+if(!["de","en","fr"].includes(LANG)) LANG = "de";
+function t(k){ const d=I18N[LANG]; return (d && d[k]!=null) ? d[k] : (I18N.de[k]!=null ? I18N.de[k] : k); }
+function catLabel(key){ return t("cat_"+key); }
+
+const DAYS = {
+  de:["SONNTAG","MONTAG","DIENSTAG","MITTWOCH","DONNERSTAG","FREITAG","SAMSTAG"],
+  en:["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"],
+  fr:["DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"]
+};
+const MONTHS = {
+  de:["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"],
+  en:["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"],
+  fr:["JANVIER","FÉVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOÛT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DÉCEMBRE"]
+};
+const _p = n => String(n).padStart(2,"0");
+const DATEFMT = {
+  de:d => _p(d.getDate())+". "+MONTHS.de[d.getMonth()],
+  en:d => MONTHS.en[d.getMonth()]+" "+d.getDate(),
+  fr:d => d.getDate()+" "+MONTHS.fr[d.getMonth()]
+};
+function labelEvent(e){
+  e.day  = DAYS[LANG][e.start.getDay()];
+  e.date = DATEFMT[LANG](e.start);
+}
+function relabelEvents(){ EVENTS.forEach(labelEvent); }
 
 function makeEvent(o){
   const start = new Date();
   start.setDate(start.getDate()+o.offset);
   start.setHours(o.h, 0, 0, 0);
   const end = new Date(start.getTime() + o.dur*3600*1000);
-  const p = n => String(n).padStart(2,"0");
-  return {...o, start, end,
-    day: DAYS[start.getDay()],
-    date: p(start.getDate())+". "+MONTHS[start.getMonth()],
+  const ev = {...o, start, end,
     sort: start.toISOString().slice(0,10),
-    time: p(o.h)+".00 – "+p(end.getHours())+".00"};
+    time: _p(o.h)+".00 – "+_p(end.getHours())+".00"};
+  labelEvent(ev);
+  return ev;
 }
 
 const EVENTS = [
- {id:1, title:"MATO : SOUSSOL", sub:"SOUNDSYSTEM", tags:["night"], offset:0, h:new Date().getHours()-1, dur:6,
+ {id:1, title:"MATO : SOUSSOL", sub:"SOUNDSYSTEM", tags:["music"], offset:0, h:new Date().getHours()-1, dur:6,
   addr1:"KÄFIGTURM 43", addr2:"3011 BERN", price:"15.-", lat:46.9481, lng:7.4444, city:"bern",
   desc:"Soundsystem-Nacht im Untergeschoss. Dub, Bass und ein Raum, der bis fünf Uhr morgens nicht leer wird.",
   ig:"https://www.instagram.com/2be.app", seed:"matosound"},
- {id:2, title:"ZAHYR FEST", sub:"OPEN AIR", tags:["night","art"], offset:4, h:22, dur:5,
+ {id:2, title:"ZAHYR FEST", sub:"OPEN AIR", tags:["music"], offset:4, h:22, dur:5,
   addr1:"MONBIJOUPARK", addr2:"3007 BERN", price:"FREE", lat:46.9412, lng:7.4342, city:"bern",
   desc:"Open Air unter dem Pavillon im Monbijoupark. Lokale DJs, freier Eintritt, solange der Park mitmacht.",
   ig:"https://www.instagram.com/2be.app", seed:"zahyr"},
- {id:3, title:"SCRYPT", sub:"POP UP", tags:["fashion","popup"], offset:5, h:14, dur:4,
+ {id:3, title:"SCRYPT", sub:"POP UP", tags:["fashion"], offset:5, h:14, dur:4,
   addr1:"EIGERPLATZ 5", addr2:"3007 BERN", price:null, lat:46.9369, lng:7.4297, city:"bern",
   desc:"Berner Streetwear-Label mit neuer Kollektion. Ein Tag, ein Raum, limitierte Stückzahlen.",
   ig:"https://www.instagram.com/2be.app", seed:"scrypt2"},
- {id:4, title:"VÔN CAMPBELL", sub:"POP UP", tags:["fashion","popup"], offset:5, h:14, dur:4,
+ {id:4, title:"VÔN CAMPBELL", sub:"POP UP", tags:["fashion"], offset:5, h:14, dur:4,
   addr1:"KRAMGASSE 12", addr2:"3011 BERN", price:null, lat:46.9479, lng:7.4515, city:"bern",
   desc:"Pop-up in der Altstadt — Kollektion, Musik und der Hund ist auch dabei.",
   ig:"https://www.instagram.com/2be.app", seed:"voncamp"},
- {id:5, title:"GROSSE HALLE", sub:"FLOHMI", tags:["thrift"], offset:6, h:10, dur:6,
+ {id:5, title:"GROSSE HALLE", sub:"FLOHMI", tags:["other"], offset:6, h:10, dur:6,
   addr1:"NEUBRÜCKSTRASSE 8", addr2:"3012 BERN", price:"FREE", lat:46.9528, lng:7.4389, city:"bern",
   desc:"Der Flohmi in der Grossen Halle. Platten, Kleider, Fotos, Zeug das man nicht sucht und trotzdem heimnimmt.",
   ig:"https://www.instagram.com/2be.app", seed:"flohmi"},
- {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9, h:12, dur:6,
+ {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9,
+ h:12, dur:6,
   addr1:"SULGENAUWEG 3", addr2:"3007 BERN", price:null, lat:46.9387, lng:7.4407, city:"bern",
   desc:"Summer Sale im Hinterhof. Archive-Pieces und Kaffee.",
   ig:"https://www.instagram.com/2be.app", seed:"snabba"},
- {id:7, title:"MIDAS", sub:"OPENING POP UP", tags:["popup","bar"], offset:10, h:17, dur:5,
+ {id:7, title:"MIDAS", sub:"OPENING POP UP", tags:["food"], offset:10, h:17, dur:5,
   addr1:"SPITALGASSE 2", addr2:"3011 BERN", price:null, lat:46.9477, lng:7.4408, city:"bern",
   desc:"Eröffnung des neuen Pop-up-Spaces an der Spitalgasse. Drinks ab 17 Uhr.",
   ig:"https://www.instagram.com/2be.app", seed:"midas"},
- {id:8, title:"POPPYST4R", sub:"POP UP", tags:["art","popup"], offset:13, h:17, dur:5,
+ {id:8, title:"POPPYST4R", sub:"POP UP", tags:["art"], offset:13, h:17, dur:5,
   addr1:"BELLEVUESTRASSE 5", addr2:"3095 SPIEGEL", price:null, lat:46.9262, lng:7.4312, city:"bern",
   desc:"Kunst- und Fashion-Crossover im Spiegel. Ein Abend, danach ist es wieder weg.",
   ig:"https://www.instagram.com/2be.app", seed:"poppy"},
@@ -335,17 +627,19 @@ const EVENTS = [
 
 const CATS = [
   {key:"all", label:"Alle"},
-  {key:"night", label:"Night Out"},
   {key:"fashion", label:"Fashion"},
-  {key:"thrift", label:"Flohmi / Thrift"},
   {key:"art", label:"Art"},
-  {key:"popup", label:"Pop Ups"},
-  {key:"bar", label:"Bar / Café"},
+  {key:"music", label:"Music"},
+  {key:"food", label:"Food"},
+  {key:"other", label:"Other"},
 ];
 
 // ================= State =================
-let state = { cat:"all", now:false, saved:new Set(), view:"find", sheet:"half" };
+let state = { cat:"all", now:false, saved:new Set(), rsvp:new Set(), view:"find", sheet:"half" };
 try{ state.saved = new Set(JSON.parse(localStorage.getItem("2be_saved")||"[]")); }catch(e){}
+try{ state.rsvp  = new Set(JSON.parse(localStorage.getItem("2be_rsvp")||"[]")); }catch(e){}
+// Demo-Basiswerte «gehen hin» (später echt aus der Datenbank)
+const GOING = {1:14, 2:31, 3:9, 4:12, 5:22, 6:7, 7:11, 8:16};
 let map, markers = [], tiles = null, firstFeedRender = true;
 
 // ================= Helpers =================
@@ -354,13 +648,26 @@ const bmSvg = '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg>';
 const shSvg = '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>';
 const isLive = e => { const n = new Date(); return n >= e.start && n <= e.end; };
 const img = (e,s) => `https://picsum.photos/seed/${e.seed}/${s}/${s}?grayscale`;
+// Kategorie-Farben (Live sticht mit Rot + Puls trotzdem heraus)
+const CATCOLORS = {fashion:"#FFE01A", art:"#3DDC97", music:"#2F80FF", food:"#FF8A3D", other:"#9AA0A6"};
+function soonLabel(e){
+  const n = new Date(), diff = e.start - n;
+  if(diff <= 0 || e.start.toDateString() !== n.toDateString()) return null;
+  const min = Math.round(diff/60000);
+  return min < 60 ? t("soonMin").replace("{n}",min) : t("soonH").replace("{n}",Math.round(min/60));
+}
 
 function filtered(){
   return EVENTS
     .filter(e => (state.cat==="all" || e.tags.includes(state.cat)) && (!state.now || isLive(e)))
     .sort((a,b)=>a.start-b.start);
 }
-function persist(){ try{ localStorage.setItem("2be_saved", JSON.stringify([...state.saved])); }catch(e){} }
+function persist(){
+  try{
+    localStorage.setItem("2be_saved", JSON.stringify([...state.saved]));
+    localStorage.setItem("2be_rsvp",  JSON.stringify([...state.rsvp]));
+  }catch(e){}
+}
 function toast(msg){
   const t=$("toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800);
@@ -372,31 +679,61 @@ const TILE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.pn
 
 function currentTheme(){ return document.documentElement.dataset.theme || "light"; }
 
-function applyTheme(t, save){
+let themeMode = "light"; // Standard: Tag. Umstellen im Profil, bleibt gespeichert.
+try{ themeMode = localStorage.getItem("2be_theme") || "light"; }catch(e){}
+if(!["light","dark"].includes(themeMode)) themeMode = "light";
+
+function applyTheme(){
+  const t = themeMode;
   document.documentElement.dataset.theme = t;
-  $("themeBtn").textContent = t==="dark" ? "☀" : "☾";
-  $("themeSwitch").classList.toggle("on", t==="dark");
-  $("themeColor").setAttribute("content", t==="dark" ? "#1c1c1e" : "#ffffff");
+  $("themeColor").setAttribute("content", t==="dark" ? "#1c1c1e" : "#FDFCF8");
+  ["light","dark"].forEach(m => $("tm-"+m).classList.toggle("on", themeMode===m));
   if(map){
     if(tiles) tiles.remove();
     tiles = L.tileLayer(t==="dark"?TILE_DARK:TILE_LIGHT,{maxZoom:19}).addTo(map);
-    if(markers.length) renderMap(); // Pin-Ränder an neues Theme anpassen
+    if(markers.length) renderMap();
   }
-  if(save){ try{ localStorage.setItem("2be_theme", t); }catch(e){} }
+  if(saReady) saRefresh();
 }
-function toggleTheme(){ applyTheme(currentTheme()==="dark"?"light":"dark", true); }
+function setThemeMode(m){
+  themeMode = m;
+  try{ localStorage.setItem("2be_theme", m); }catch(e){}
+  applyTheme();
+}
+function initTheme(){ applyTheme(); }
 
-function initTheme(){
-  let t = null;
-  try{ t = localStorage.getItem("2be_theme"); }catch(e){}
-  if(!t) t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  applyTheme(t, false);
+// ================= Sprache =================
+function applyStaticI18n(){
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
+}
+function updateLangButtons(){
+  document.querySelectorAll("#langBtns button").forEach(b => b.classList.toggle("on", b.dataset.lang===LANG));
+}
+function setLang(l){
+  if(!["de","en","fr"].includes(l)) return;
+  LANG = l;
+  try{ localStorage.setItem("2be_lang", l); }catch(e){}
+  document.documentElement.lang = l;
+  relabelEvents();
+  applyStaticI18n();
+  updateLangButtons();
+  renderAll();
+  setSheet(state.sheet, false);
+  if($("detail").classList.contains("open") && state.detailId) renderDetail(state.detailId);
+  if(saReady) saRefresh();
+}
+function initLang(){
+  document.documentElement.lang = LANG;
+  applyStaticI18n();
+  updateLangButtons();
 }
 
 // ================= Render =================
 function renderFilters(){
   $("filters").innerHTML = CATS.map(c =>
-    `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${c.label}</button>`).join("");
+    `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${catLabel(c.key)}</button>`).join("");
 }
 
 function renderFeed(){
@@ -412,18 +749,18 @@ function renderFeed(){
           <div class="ev-sub">${e.sub}</div>
         </div>
         <div class="card-actions">
-          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="Teilen">${shSvg}</button>
-          <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="Speichern">${bmSvg}</button>
+          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="${t('tShare')}">${shSvg}</button>
+          <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tSave')}">${bmSvg}</button>
         </div>
       </div>
       ${e.price?`<div class="price-tag">${e.price}</div>`:""}
-      ${isLive(e)?`<div class="live-tag">LIVE</div>`:""}
+      ${isLive(e)?`<div class="live-tag">LIVE</div>`:(soonLabel(e)?`<div class="soon-tag">${soonLabel(e)}</div>`:"")}
       <div class="bar bottom">
         <div class="meta">${e.day}<br>${e.date}<br><span class="light">${e.time}</span></div>
         <div class="meta right">${e.addr1}<br>${e.addr2}</div>
       </div>
     </div>`).join("")
-  : `<div class="empty">Gerade läuft nichts${state.cat!=="all"?" in dieser Kategorie":""}.<br>Filter anpassen oder «JETZT» ausschalten.</div>`;
+  : `<div class="empty">${t('emptyNothing')}${state.cat!=="all"?t('emptyInCat'):""}.<br>${t('emptyAdjust')}</div>`;
   firstFeedRender = false;
 }
 
@@ -431,34 +768,56 @@ function renderMap(){
   markers.forEach(m=>m.remove()); markers=[];
   filtered().forEach(e => {
     const live = isLive(e);
-    const m = L.circleMarker([e.lat,e.lng],{
-      radius:live?11:9, color:currentTheme()==="dark"?"#f2f2f2":"#111", weight:2,
-      fillColor:live?"#d40000":"#FFE01A", fillOpacity:1
-    }).addTo(map);
+    const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
+    const size = live ? 22 : 16;
+    const icon = L.divIcon({
+      className:"",
+      html:`<div class="pin ${live?'live':''}" style="${live?'':'background:'+color}"></div>`,
+      iconSize:[size,size], iconAnchor:[size/2,size/2]
+    });
+    const m = L.marker([e.lat,e.lng],{icon}).addTo(map);
     m.on("click", ev => { L.DomEvent.stopPropagation(ev); openDetail(e.id); });
     markers.push(m);
   });
 }
 
+function renderLive(){
+  const live = EVENTS.filter(isLive);
+  const row = $("liveRow");
+  if(!live.length){ row.style.display="none"; return; }
+  row.style.display="flex";
+  row.innerHTML = `<div class="live-head"><span><span class="dot"></span>LIVE</span></div>` +
+    live.map(e=>`<div class="live-item" onclick="openDetail(${e.id})">
+      <img class="live-thumb" src="${img(e,100)}" alt="">
+      <span class="live-label">${e.title}</span>
+    </div>`).join("");
+}
+
 function renderTimeline(){
   const saved = EVENTS.filter(e=>state.saved.has(e.id)).sort((a,b)=>a.start-b.start);
   if(!saved.length){
-    $("timeline").innerHTML = `<div class="tl-head">(My) Upcoming Events</div>
-      <div class="empty">Noch nichts gespeichert.<br>Markiere Events im Feed mit dem Lesezeichen.</div>`;
+    $("timeline").innerHTML = `<div class="tl-head">${t('upcoming')}</div>
+      <div class="empty">${t('emptySavedTitle')}<br>${t('emptySavedText')}</div>`;
     return;
   }
   const byDate = {};
   saved.forEach(e => (byDate[e.sort]=byDate[e.sort]||[]).push(e));
-  $("timeline").innerHTML = `<div class="tl-head">(My) Upcoming Events</div>` +
+  $("timeline").innerHTML = `<div class="tl-head">${t('upcoming')}</div>` +
     Object.keys(byDate).sort().map(d=>{
       const evs = byDate[d];
       const dnum = d.slice(8,10)+"."+d.slice(5,7)+".";
       return `<div class="tl-group">
         <div class="tl-date">${dnum}</div>
         <div class="tl-day">${evs[0].day}</div>
-        ${evs.map(e=>`<div class="tl-event" onclick="openDetail(${e.id})">
-          <span class="tl-dot"></span><span class="t">${e.title} — ${e.sub}</span>
-          <span class="x">${e.time.split(" ")[0]}</span></div>`).join("")}
+        ${evs.map(e=>`<div class="tl-card" onclick="openDetail(${e.id})">
+          <img src="${img(e,200)}" alt="" loading="lazy">
+          <div class="tl-info">
+            <div class="tl-t">${e.title}</div>
+            <div class="tl-s">${e.sub}</div>
+            <div class="tl-m">${e.time.split(" ")[0]} · ${e.addr1}</div>
+          </div>
+          <button class="tl-x" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tRemove')}">${bmSvg}</button>
+        </div>`).join("")}
       </div>`;
     }).join("");
 }
@@ -470,14 +829,17 @@ function renderNav(){
 
 function renderDetail(id){
   const e = EVENTS.find(x=>x.id===id); if(!e) return;
+  state.detailId = id;
   const saved = state.saved.has(e.id);
+  const going = state.rsvp.has(e.id);
+  const count = (GOING[e.id]||0) + (going?1:0);
   $("detail").innerHTML = `
     <div class="d-imgwrap">
       <button class="d-close" onclick="closeDetail()">✕</button>
       <img src="${img(e,800)}" alt="">
       ${e.price?`<div class="price-tag" style="top:12px">${e.price}</div>`:""}
     </div>
-    ${isLive(e)?`<div class="d-livebar">● Läuft jetzt gerade</div>`:""}
+    ${isLive(e)?`<div class="d-livebar">${t('liveNow')}</div>`:""}
     <div class="d-body">
       <div>
         <div class="d-title">${e.title}</div>
@@ -488,16 +850,20 @@ function renderDetail(id){
         <div class="meta right">${e.addr1}<br>${e.addr2}</div>
       </div>
       <div class="d-desc">${e.desc}</div>
-      <div class="d-tags">${e.tags.map(t=>`<span class="d-tag">${(CATS.find(c=>c.key===t)||{label:t}).label}</span>`).join("")}</div>
+      <div class="d-tags">${e.tags.map(tag=>`<span class="d-tag">${catLabel(tag)}</span>`).join("")}</div>
+      <button class="rsvp-btn ${going?'on':''}" onclick="toggleRsvp(${e.id})">
+        ${going?t('going'):t('notGoing')} · ${count}
+      </button>
       <div class="d-actions">
-        <button class="${saved?'saved-state':'primary'}" onclick="toggleSave(${e.id});renderDetail(${e.id})">${saved?"✓ Gespeichert":"Speichern"}</button>
-        <button onclick="share(${e.id})">Teilen</button>
+        <button class="${saved?'saved-state':'primary'}" onclick="toggleSave(${e.id});renderDetail(${e.id})">${saved?t('saved'):t('save')}</button>
+        <button onclick="share(${e.id})">${t('share')}</button>
+        <button onclick="calExport(${e.id})">${t('calendar')}</button>
         <a href="${e.ig}" target="_blank" rel="noopener">Instagram ↗</a>
       </div>
     </div>`;
 }
 
-function renderAll(){ renderFilters(); renderFeed(); renderMap(); renderTimeline(); renderNav(); }
+function renderAll(){ renderFilters(); renderLive(); renderFeed(); renderMap(); renderTimeline(); renderNav(); }
 
 // ================= Actions =================
 function setCat(c){ state.cat=c; renderAll(); }
@@ -505,7 +871,7 @@ function toggleNow(){
   state.now=!state.now;
   $("nowBtn").classList.toggle("on",state.now);
   renderAll();
-  if(state.now) toast("Zeigt nur, was jetzt gerade läuft");
+  if(state.now) toast(t("toastNow"));
 }
 // ================= Bottom Sheet =================
 const sheet = ()=>$("sheet");
@@ -522,7 +888,7 @@ function setSheet(s, animate=true){
   el.classList.remove("s-list","s-half","s-map");
   el.classList.add("s-"+s);
   el.style.transform = `translateY(${sheetY(s)}px)`;
-  $("handleLabel").textContent = s==="map" ? "LISTE ANZEIGEN" : "EVENTS";
+  $("handleLabel").textContent = s==="map" ? t("showList") : t("events");
 }
 function initSheet(){
   const h = $("handle");
@@ -579,6 +945,36 @@ function syncSaved(){
   });
   renderNav(); renderTimeline();
 }
+function toggleRsvp(id){
+  state.rsvp.has(id) ? state.rsvp.delete(id) : state.rsvp.add(id);
+  persist();
+  renderDetail(id);
+  if(state.rsvp.has(id)) toast(t("toastRsvp"));
+}
+function calExport(id){
+  const e = EVENTS.find(x=>x.id===id); if(!e) return;
+  const f = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0")
+    + "T" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0") + "00";
+  const url = new URL(`e/${id}.html`, location.href).href;
+  const ics = [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//2BE//Prototyp//DE",
+    "BEGIN:VEVENT",
+    "UID:2be-proto-"+e.id+"@2be.app",
+    "DTSTART:"+f(e.start),
+    "DTEND:"+f(e.end),
+    "SUMMARY:"+e.title+" — "+e.sub,
+    "LOCATION:"+e.addr1+"\\, "+e.addr2,
+    "DESCRIPTION:"+e.desc.replace(/,/g,"\\,")+"\\n\\n"+url,
+    "BEGIN:VALARM","TRIGGER:-PT2H","ACTION:DISPLAY","DESCRIPTION:"+e.title+" "+t("icsSoon"),"END:VALARM",
+    "END:VEVENT","END:VCALENDAR"
+  ].join("\r\n");
+  const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = e.title.toLowerCase().replace(/[^a-z0-9]+/g,"-") + ".ics";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast(t("toastCal"));
+}
 function surprise(){
   const pool = EVENTS.filter(e => e.end > new Date());
   const e = pool[Math.floor(Math.random()*pool.length)];
@@ -594,13 +990,353 @@ function share(id){
     // Nur die URL teilen: iMessage & Co. zeigen dann die grosse Preview-Karte
     navigator.share({url}).catch(()=>{});
   } else if(navigator.clipboard){
-    navigator.clipboard.writeText(url); toast("Link kopiert — auch ohne App öffenbar");
+    navigator.clipboard.writeText(url); toast(t("toastShare"));
   }
 }
 function openDetail(id){ renderDetail(id); $("detail").classList.add("open"); }
 function closeDetail(){ $("detail").classList.remove("open"); syncSaved(); }
+
+// ================= Submit (Mock — schreibt später in die Supabase-Vetting-Queue) =================
+let flyerData = null;
+function openSubmit(){ $("submit").classList.add("open"); }
+function closeSubmit(){ $("submit").classList.remove("open"); }
+function flyerPicked(inp){
+  const f = inp.files && inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    flyerData = ev.target.result;
+    const box = $("flyerBox");
+    box.classList.add("has"); box.classList.remove("err");
+    box.innerHTML = `<img src="${flyerData}" alt="Flyer"><span class="fl-change">${t('change')}</span>`;
+    $("err-flyer").classList.remove("show");
+  };
+  r.readAsDataURL(f);
+}
+function markErr(id, errId, bad){
+  if(id) $(id).classList.toggle("err", bad);
+  $(errId).classList.toggle("show", bad);
+  return bad;
+}
+function submitEvent(){
+  const title = $("subTitle").value.trim();
+  const date  = $("subDate").value;
+  const email = $("subEmail").value.trim();
+  const today = new Date().toISOString().slice(0,10);
+  let bad = false;
+  bad = markErr(null, "err-flyer", !flyerData) || bad;
+  if(!flyerData) $("flyerBox").classList.add("err");
+  bad = markErr("subTitle", "err-title", !title) || bad;
+  bad = markErr("subDate",  "err-date",  !date || date < today) || bad;
+  bad = markErr("subEmail", "err-email", !/^\S+@\S+\.\S+$/.test(email)) || bad;
+  if(bad) return;
+  // Prototyp: lokal ablegen — später INSERT in Supabase-Tabelle `submissions` (Status: pending)
+  try{
+    const subs = JSON.parse(localStorage.getItem("2be_submissions")||"[]");
+    subs.push({title, date, time:$("subTime").value||null, link:$("subLink").value.trim()||null,
+      email, ts:new Date().toISOString()});
+    localStorage.setItem("2be_submissions", JSON.stringify(subs));
+  }catch(e){}
+  $("submitForm").style.display = "none";
+  $("submitDone").classList.add("show");
+}
+function resetSubmit(){
+  flyerData = null;
+  $("flyerInput").value = "";
+  $("flyerBox").classList.remove("has","err");
+  $("flyerBox").innerHTML = `<div class="fl-icon">＋</div><div class="fl-txt">${t('flyerCta')}</div>`;
+  ["subTitle","subDate","subTime","subLink","subEmail"].forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
+  document.querySelectorAll(".f-err").forEach(e=>e.classList.remove("show"));
+  $("submitDone").classList.remove("show");
+  $("submitForm").style.display = "flex";
+}
+
+// ================= Plakatsäule (3D — three.js Colonne Morris) =================
+const THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+let saOpen=false, saReady=false, saRaf=null;
+let saScene, saCam, saRenderer, saGroup, saPosters=[], saActions=[];
+let saVel=0.0012, saDragging=false, saMoved=false, saLastX=0, saDownX=0, saDownY=0;
+let saCamDist=12.5, saTargetY=3.0;
+let saPtrs=new Map(), saPinchD=0, saLastTouch=-1e6;
+// Masse der Säule — hier jederzeit anpassen:
+const SA_RADIUS=1.0;       // Korpus-Radius
+const SA_BODY_H=3.0;       // Korpus-Höhe
+const SA_DOME_SCALE=1.0;   // Kuppel-Streckung (1 = Original, <1 = flacher/runder)
+const SA_IDLE_SPEED=0.0012;// Ruhe-Drehtempo (langsam); 0.004 war vorher
+const SA_IDLE_DELAY=3000;  // ms nach letzter Berührung, bis die Säule wieder dreht
+
+function saPicks(){ return EVENTS.filter(e => e.end > new Date()).sort((a,b)=>a.start-b.start).slice(0,6); }
+
+function saWrap(g,text,x,y,maxW,lh,align){
+  g.textAlign = align || "center";
+  const words=(text||"").split(" "); let line="", yy=y;
+  for(const w of words){
+    const test = line ? line+" "+w : w;
+    if(g.measureText(test).width>maxW && line){ g.fillText(line,x,yy); line=w; yy+=lh; }
+    else line=test;
+  }
+  if(line) g.fillText(line,x,yy);
+  return yy;
+}
+// Ein Plakat als Canvas (echte Event-Daten, Tag/Nacht-getönt)
+function saPoster(a){
+  const W=256, H=768, c=document.createElement("canvas"); c.width=W; c.height=H;
+  const g=c.getContext("2d"); const dark = currentTheme()==="dark";
+  if(a.type==="branding"){
+    g.fillStyle="#7D39EB"; g.fillRect(0,0,W,H);
+    g.fillStyle="#fff"; g.textAlign="center";
+    g.font="800 128px Helvetica,Arial"; g.fillText("2BE",W/2,H*0.44);
+    g.font="600 30px Helvetica,Arial";
+    g.fillText("Showing you",W/2,H*0.58); g.fillText("the places 2 be",W/2,H*0.63);
+    return c;
+  }
+  // (Tür wird als 3D-Nische modelliert — siehe saAddDoor, nicht als flaches Plakat)
+  const e=a.ev;
+  g.fillStyle=dark?"#cdbf9f":"#efe7d2"; g.fillRect(0,0,W,H);
+  g.fillStyle="rgba(70,52,32,.05)";
+  for(let i=0;i<22;i++){ g.beginPath(); g.arc(Math.random()*W,Math.random()*H,Math.random()*40,0,7); g.fill(); }
+  const col=CATCOLORS[e.tags[0]]||CATCOLORS.other;
+  g.fillStyle=col; g.fillRect(0,0,W,120);
+  g.fillStyle=(col==="#FFE01A")?"#111":"#fff";
+  g.textAlign="left"; g.font="800 32px Helvetica,Arial";
+  g.fillText(catLabel(e.tags[0]).toUpperCase(),24,74);
+  g.fillStyle="#1a1712"; g.font="800 46px Helvetica,Arial";
+  let y=saWrap(g,e.title.toUpperCase(),24,214,W-48,50,"left");
+  g.fillStyle="#6d6250"; g.font="600 26px Helvetica,Arial";
+  g.fillText(e.sub.toUpperCase(),24,y+36);
+  g.strokeStyle="#C9BD9F"; g.lineWidth=2; g.beginPath(); g.moveTo(24,H-158); g.lineTo(W-24,H-158); g.stroke();
+  g.fillStyle="#1a1712"; g.font="800 26px Helvetica,Arial"; g.fillText(e.day,24,H-108);
+  g.fillStyle="#3a352c"; g.font="600 23px Helvetica,Arial";
+  g.fillText(e.date+" · "+e.time.split(" ")[0],24,H-70);
+  return c;
+}
+
+// Gekrümmtes Plakat (Zylinder-Segment, folgt der Rundung) — von aussen lesbar
+function saCurved(canvas,ang,arc,h,radius){
+  const T=THREE;
+  const tex=new T.CanvasTexture(canvas); tex.anisotropy=4;
+  const geo=new T.CylinderGeometry(radius,radius,h,24,1,true,ang-arc/2,arc);
+  return new T.Mesh(geo,new T.MeshStandardMaterial({map:tex,roughness:.9,metalness:0,side:T.FrontSide}));
+}
+// Türblatt-Textur (Holz mit Kassetten + Knauf, kein Text)
+function saDoorLeaf(){
+  const W=256,H=768,c=document.createElement("canvas");c.width=W;c.height=H;
+  const g=c.getContext("2d");const dark=currentTheme()==="dark";
+  g.fillStyle=dark?"#20170d":"#6b4f2c";g.fillRect(0,0,W,H);
+  g.strokeStyle="rgba(0,0,0,.5)";g.lineWidth=8;g.strokeRect(8,8,W-16,H-16);
+  const cols=2,rows=3,pad=22,dx=22,dy=22,dw=W-44,dh=H-44;
+  const pw2=(dw-(cols+1)*pad)/cols, ph2=(dh-(rows+1)*pad)/rows;
+  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
+    const x=dx+pad+cc*(pw2+pad), y=dy+pad+r*(ph2+pad);
+    g.fillStyle=dark?"#161009":"#553f20";g.fillRect(x,y,pw2,ph2);
+    g.strokeStyle="rgba(0,0,0,.4)";g.lineWidth=3;g.strokeRect(x,y,pw2,ph2);
+    g.strokeStyle="rgba(255,255,255,.06)";g.lineWidth=1;g.strokeRect(x+3,y+3,pw2-6,ph2-6);
+  }
+  g.fillStyle="#7D39EB";g.beginPath();g.arc(W-40,H/2,12,0,7);g.fill(); // Knauf
+  return c;
+}
+// Schild über der Tür (Violett, „GET LISTED" + Hinweis)
+function saDoorSign(){
+  const W=512,H=132,c=document.createElement("canvas");c.width=W;c.height=H;
+  const g=c.getContext("2d");
+  g.fillStyle="#7D39EB";g.fillRect(0,0,W,H);
+  g.fillStyle="#fff";g.textAlign="center";
+  g.font="800 54px Helvetica,Arial";g.fillText(t("doorSign"),W/2,56);
+  g.font="600 26px Helvetica,Arial";g.fillText(t("doorHint"),W/2,100);
+  return c;
+}
+// Eingelassene Tür-Nische (geht in die Säule hinein)
+function saAddDoor(gr,ang,arc,dBot,dTop,R,matAcc,matDark){
+  const T=THREE;
+  const dH=dTop-dBot, yMid=(dBot+dTop)/2, rIn=R-0.18;
+  const halfChord=rIn*Math.sin(arc/2), rMid=(R+rIn)/2;
+  // dunkle Rückwand hinter dem Türblatt
+  const back=new T.Mesh(new T.CylinderGeometry(rIn-0.03,rIn-0.03,dH,20,1,true,ang-arc/2,arc),matDark);
+  back.position.y=yMid; gr.add(back);
+  // seitliche Laibungen (radiale Wände)
+  [-1,1].forEach(s=>{
+    const ea=ang+s*arc/2;
+    const jamb=new T.Mesh(new T.BoxGeometry(0.03,dH,R-rIn),matDark);
+    jamb.position.set(Math.sin(ea)*rMid,yMid,Math.cos(ea)*rMid); jamb.rotation.y=ea; gr.add(jamb);
+  });
+  // Sturz oben & Schwelle unten (schliessen die Nische)
+  const head=new T.Mesh(new T.BoxGeometry(2*halfChord+0.06,0.07,R-rIn),matDark);
+  head.position.set(Math.sin(ang)*rMid,dTop-0.035,Math.cos(ang)*rMid); head.rotation.y=ang; gr.add(head);
+  const sill=new T.Mesh(new T.BoxGeometry(2*halfChord+0.06,0.06,R-rIn),matAcc); // violette Schwelle
+  sill.position.set(Math.sin(ang)*rMid,dBot+0.03,Math.cos(ang)*rMid); sill.rotation.y=ang; gr.add(sill);
+  // Türblatt (zurückversetzt, leicht offen)
+  const leaf=new T.Mesh(new T.PlaneGeometry(2*halfChord*0.96,dH-0.14),
+    new T.MeshStandardMaterial({map:new T.CanvasTexture(saDoorLeaf()),roughness:.85,metalness:0,side:T.DoubleSide}));
+  leaf.position.set(Math.sin(ang)*rIn,yMid,Math.cos(ang)*rIn); leaf.rotation.y=ang-0.12; // angelehnt
+  leaf.userData.action={type:"submit"}; gr.add(leaf); saPosters.push(leaf);
+  // Schild an der Aussenfläche über der Tür
+  const sign=saCurved(saDoorSign(),ang,arc,0.52,R+0.012);
+  sign.position.y=dTop+0.30; sign.userData.action={type:"submit"}; gr.add(sign); saPosters.push(sign);
+}
+
+function saBuildColumn(){
+  const T=THREE;
+  if(saGroup) saScene.remove(saGroup);
+  const gr=new T.Group();
+  const matBody=new T.MeshStandardMaterial({color:0x23402f,roughness:.6,metalness:.15});
+  const matDome=new T.MeshStandardMaterial({color:0x2f6b57,roughness:.4,metalness:.3});
+  const matAcc =new T.MeshStandardMaterial({color:0x7D39EB,roughness:.35,metalness:.85}); // Violett-Akzent
+  const matDark=new T.MeshStandardMaterial({color:0x121a12,roughness:.95,metalness:0,side:T.DoubleSide}); // Nische innen
+  const R=SA_RADIUS, BH=SA_BODY_H;
+  const b1=new T.Mesh(new T.CylinderGeometry(1.32,1.42,.22,48),matBody); b1.position.y=.11; gr.add(b1);
+  const b2=new T.Mesh(new T.CylinderGeometry(1.14,1.32,.20,48),matBody); b2.position.y=.32; gr.add(b2);
+  const b3=new T.Mesh(new T.CylinderGeometry(R+.03,1.14,.14,48),matAcc); b3.position.y=.49; gr.add(b3);
+  const baseTop=.56, bodyTop=baseTop+BH;
+
+  // Aktionen + Winkel
+  saPosters=[]; saActions=[];
+  saPicks().forEach(e=>saActions.push({type:"event",ev:e,id:e.id}));
+  saActions.push({type:"submit"}); saActions.push({type:"branding"});
+  const N=saActions.length;
+  const arc=(2*Math.PI/N)*0.9;                 // Breite (Winkel) je Plakat/Tür
+  const yMid=baseTop+BH*0.52, ph=BH*0.80;
+  const doorAng=saActions.findIndex(a=>a.type==="submit")/N*Math.PI*2;
+  const dBot=baseTop+0.02, dTop=baseTop+BH*0.66; // Tür-Öffnung (Höhe)
+
+  // Korpus: Tür-Sektor im Mittelband ausgespart, oben & unten voll
+  const up=new T.Mesh(new T.CylinderGeometry(R,R,bodyTop-dTop,64,1,true),matBody); up.position.y=(dTop+bodyTop)/2; gr.add(up);
+  if(dBot-baseTop>0.005){ const lo=new T.Mesh(new T.CylinderGeometry(R,R,dBot-baseTop,64,1,true),matBody); lo.position.y=(baseTop+dBot)/2; gr.add(lo); }
+  const mid=new T.Mesh(new T.CylinderGeometry(R,R,dTop-dBot,64,1,true,doorAng+arc/2,2*Math.PI-arc),matBody);
+  mid.position.y=(dBot+dTop)/2; gr.add(mid);
+
+  // Gesims / Kuppel / Finial
+  const g1=new T.Mesh(new T.CylinderGeometry(1.12,R+.01,.16,64),matDome); g1.position.y=bodyTop+.08; gr.add(g1);
+  const tor=new T.Mesh(new T.TorusGeometry(1.10,.03,12,64),matAcc); tor.rotation.x=Math.PI/2; tor.position.y=bodyTop+.16; gr.add(tor);
+  const g2=new T.Mesh(new T.CylinderGeometry(1.06,1.12,.14,64),matDome); g2.position.y=bodyTop+.23; gr.add(g2);
+  const cTop=bodyTop+.30;
+  const pts=[[1.06,0],[1.10,.10],[1.05,.30],[.94,.58],[.78,.88],[.58,1.18],[.40,1.48],[.24,1.76],[.12,1.98],[.04,2.10],[0,2.15]].map(p=>new T.Vector2(p[0],p[1]*SA_DOME_SCALE));
+  const dome=new T.Mesh(new T.LatheGeometry(pts,64),matDome); dome.position.y=cTop; gr.add(dome);
+  const domeTop=cTop+2.15*SA_DOME_SCALE;
+  const ball=new T.Mesh(new T.SphereGeometry(.10,20,16),matAcc); ball.position.y=domeTop+.06; gr.add(ball);
+  const spike=new T.Mesh(new T.ConeGeometry(.028,.34,16),matAcc); spike.position.y=domeTop+.30; gr.add(spike);
+
+  // Gekrümmte Plakate + eingelassene Tür
+  saActions.forEach((a,i)=>{
+    const ang=i/N*Math.PI*2;
+    if(a.type==="submit"){ saAddDoor(gr,ang,arc,dBot,dTop,R,matAcc,matDark); return; }
+    const pl=saCurved(saPoster(a),ang,arc,ph,R+0.008);
+    pl.position.y=yMid; pl.userData.action=a;
+    gr.add(pl); saPosters.push(pl);
+  });
+
+  saGroup=gr; saScene.add(gr);
+  saTargetY=(domeTop+0.5)*0.46;
+}
+
+function saBuild(){
+  const T=THREE;
+  saScene=new T.Scene();
+  saCam=new T.PerspectiveCamera(42,1,0.1,100);
+  saRenderer=new T.WebGLRenderer({antialias:true,alpha:true});
+  saRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  saRenderer.toneMapping=T.ACESFilmicToneMapping; saRenderer.toneMappingExposure=1.12;
+  $("saScene").appendChild(saRenderer.domElement);
+  saScene.add(new T.HemisphereLight(0xffffff,0x2a2438,0.6));
+  saScene.add(new T.AmbientLight(0xffffff,0.25));
+  const key=new T.DirectionalLight(0xfff2e0,1.1); key.position.set(6,11,8); saScene.add(key);
+  const rim=new T.DirectionalLight(0x9d6bff,0.5); rim.position.set(-4,6,-8); saScene.add(rim); // violetter Rand
+  saBuildColumn();
+  saResize(); addEventListener("resize",saResize);
+  saInput();
+  saReady=true;
+}
+function saTick(ts){
+  if(!saOpen){ saRaf=null; return; }
+  if(saGroup && !saDragging){
+    if((ts - saLastTouch) > SA_IDLE_DELAY){
+      saVel += (SA_IDLE_SPEED - saVel)*0.02;   // nach 3 s sanft auf langsame Dauerdrehung
+    } else {
+      saVel *= 0.90;                            // frisch berührt: Restschwung ausrollen, dann Stillstand
+    }
+    saGroup.rotation.y += saVel;
+  }
+  saCam.position.set(0,saTargetY+1.4,saCamDist);
+  saCam.lookAt(0,saTargetY,0);
+  saRenderer.render(saScene,saCam);
+  saRaf=requestAnimationFrame(saTick);
+}
+function saResize(){
+  if(!saRenderer) return;
+  const host=$("saScene"), w=host.clientWidth, h=host.clientHeight;
+  if(!w||!h) return;
+  saRenderer.setSize(w,h,false); saCam.aspect=w/h; saCam.updateProjectionMatrix();
+}
+function saPtrDist(){ const p=[...saPtrs.values()]; return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); }
+function saInput(){
+  const el=saRenderer.domElement;
+  el.addEventListener("pointerdown",ev=>{
+    saLastTouch=performance.now();
+    saPtrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+    if(saPtrs.size===1){ saDragging=true; saMoved=false; saLastX=ev.clientX; saDownX=ev.clientX; saDownY=ev.clientY; }
+    else if(saPtrs.size===2){ saDragging=false; saPinchD=saPtrDist(); }
+  });
+  el.addEventListener("pointermove",ev=>{
+    if(saPtrs.size>=1) saLastTouch=performance.now();
+    if(saPtrs.has(ev.pointerId)) saPtrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
+    if(saPtrs.size>=2){ const d=saPtrDist(); if(saPinchD&&d) saCamDist=Math.max(7,Math.min(20,saCamDist*(saPinchD/d))); saPinchD=d; saMoved=true; return; }
+    if(!saDragging) return;
+    const dx=ev.clientX-saLastX; saLastX=ev.clientX;
+    if(Math.abs(ev.clientX-saDownX)+Math.abs(ev.clientY-saDownY)>6) saMoved=true;
+    if(saGroup) saGroup.rotation.y+=dx*0.008; saVel=dx*0.008;
+  });
+  const up=ev=>{
+    saLastTouch=performance.now();
+    saPtrs.delete(ev.pointerId);
+    if(saPtrs.size<2) saPinchD=0;
+    if(saPtrs.size===0){ if(saDragging && !saMoved) saPick(ev); saDragging=false; }
+  };
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointercancel",up);
+  el.addEventListener("wheel",ev=>{ saLastTouch=performance.now(); ev.preventDefault(); saCamDist=Math.max(7,Math.min(20,saCamDist+ev.deltaY*0.01)); },{passive:false});
+}
+function saPick(ev){
+  const r=saRenderer.domElement.getBoundingClientRect();
+  const nd={x:((ev.clientX-r.left)/r.width)*2-1, y:-((ev.clientY-r.top)/r.height)*2+1};
+  const rc=new THREE.Raycaster(); rc.setFromCamera(nd,saCam);
+  const hit=rc.intersectObjects(saPosters,false)[0];
+  if(!hit) return;
+  const a=hit.object.userData.action;
+  if(a.type==="event"){ closeSaeule(); openDetail(a.id); }   // direkt zum Event
+  else if(a.type==="submit"){ closeSaeule(); openSubmit(); }  // Tür → Kontakt/Einreichen
+}
+// Neu bauen bei Sprach-/Themawechsel (Plakat-Texte & Tönung)
+function saRefresh(){
+  if(!saReady) return;
+  const rot = saGroup ? saGroup.rotation.y : 0;
+  saBuildColumn();
+  if(saGroup) saGroup.rotation.y=rot;
+}
+function loadThree(cb){
+  if(window.THREE) return cb();
+  const ex=document.getElementById("threejs");
+  if(ex){ ex.addEventListener("load",cb); return; }
+  const s=document.createElement("script");
+  s.id="threejs"; s.src=THREE_URL; s.onload=cb;
+  s.onerror=()=>toast("3D konnte nicht geladen werden");
+  document.head.appendChild(s);
+}
+function openSaeule(){
+  $("saeule").classList.add("open");
+  saOpen=true;
+  loadThree(()=>{
+    if(!saOpen) return;
+    if(!saReady) saBuild(); else { saResize(); saRefresh(); }
+    if(!saRaf) saTick();
+  });
+}
+function closeSaeule(){
+  saOpen=false;
+  if(saRaf){ cancelAnimationFrame(saRaf); saRaf=null; }
+  $("saeule").classList.remove("open");
+}
+
 function show(v){
-  state.view=v; closeDetail();
+  state.view=v; closeDetail(); closeSubmit(); closeSaeule();
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   $("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
@@ -612,6 +1348,7 @@ function show(v){
 map = L.map("map",{zoomControl:false,attributionControl:false}).setView([46.9445,7.4400],13);
 map.on("click", ()=>setSheet("map")); // Tap auf Karte: Karte gross
 initTheme();
+initLang();
 initSheet();
 setSheet("half", false);
 renderAll();
