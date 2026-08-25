@@ -11,6 +11,7 @@
      theme-color unten, das mit Tag/Nacht mitwandert. -->
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="2BE">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%237D39EB'/%3E%3Ctext x='90' y='112' font-family='Helvetica,Arial' font-size='58' font-weight='bold' fill='%23fff' text-anchor='middle'%3E2BE%3C/text%3E%3C/svg%3E">
 <meta name="theme-color" content="#ffffff" id="themeColor">
 <title>2BE — LED-Säule Landing</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -380,6 +381,14 @@
     color:#141414;
   }
 
+  .ld-scrim{
+    position:absolute;top:0;left:0;right:0;height:190px;z-index:2;pointer-events:none;
+    background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.28) 45%, transparent);
+  }
+  html[data-ld="day"] .ld-scrim{
+    background:linear-gradient(180deg, rgba(250,248,244,.62), rgba(250,248,244,.3) 45%, transparent);
+  }
+
   /* ---- Kopfzeile ---- */
   .ld-top{
     position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:14px;right:14px;
@@ -453,6 +462,7 @@
 <div id="land">
   <div class="ld-wrap" id="ldWrap">
     <canvas id="ldCanvas"></canvas>
+    <div class="ld-scrim"></div>
 
     <div class="ld-top">
       <div class="lg ld-city">BERN</div>
@@ -1637,7 +1647,7 @@ function show(v){
 // LED-Mantel, dessen Bild wandert. Leuchtkraft folgt dem Sonnenstand.
 const LD = {
   R:1, H:3.09, ARC:118,          // unteres Band: Radius, Screenhöhe, Grad pro Event
-  ORN:0.52,                      // nicht-digitales Ornamentband darüber
+  ORN:0.30,                      // nicht-digitales Ornamentband darüber
   H_TOP:2.04, ARC_TOP:78,        // oberes Band: Poster zwischen gross und klein
   up:0, upTarget:0,              // 0 = unten, 1 = oben (Kamera fährt die Säule hoch)
   W:512, HH:768,                 // Zellauflösung im Atlas
@@ -1967,7 +1977,7 @@ function ldResize(){
   let d = (2*LD.R/0.82) / (2*tan*aspect);
   // ... und oben/unten trotzdem Luft bleibt (Reflexion + Glaskarte)
   d = Math.max(d, (LD.H*1.42) / (2*tan));
-  LD.camLow  = {y:0.42, z:d,       look:0.06};
+  LD.camLow  = {y:0.50, z:d,       look:0.20};   // oberes Band ragt schon ins Bild
   LD.camHigh = {y:(LD.yTop||2.6)-0.45, z:d,      look:(LD.yTop||2.6)+0.12};
   LD.cam.aspect = aspect;
   ldApplyCam();
@@ -2008,7 +2018,7 @@ function ldBindDrag(el){
       const dt = Math.max(8, now - lastT);      // Geschwindigkeit pro Frame, nicht pro Geste
       vel = 0.7*vel + 0.3*((e.clientX-lastX)/dt);
       lastX = e.clientX; lastT = now;
-      LD.scroll = LD.target = s0 - dx/(el.clientWidth*SWIPE);
+      LD.scroll = LD.target = s0 - dx/(el.clientWidth*SWIPE) / ldGear();
     }
   });
   const up = e=>{
@@ -2016,7 +2026,7 @@ function ldBindDrag(el){
     if(moved < 7 && performance.now()-t0 < 400){ ldOpen(); return; }
     if(axis === "y"){ LD.upTarget = LD.up > 0.4 ? 1 : 0; return; }
     // Wurf: schneller Wisch trägt weiter, langsamer rastet beim nächsten ein
-    const carry = Math.max(-2.5, Math.min(2.5, -vel * el.clientWidth * 0.0022 / SWIPE));
+    const carry = Math.max(-2.5, Math.min(2.5, -vel * el.clientWidth * 0.0022 / SWIPE)) / ldGear();
     ldSnap(LD.scroll + carry);
   };
   el.addEventListener("pointerup", up);
@@ -2030,6 +2040,10 @@ function ldBindDrag(el){
     if(e.key==="ArrowDown")  LD.upTarget = 0;
   });
 }
+
+// Oben sind die Poster kleiner — ein Wisch soll trotzdem ein Poster weiterschieben,
+// nicht das gleiche Stück Umfang wie unten. Übersetzt weich mit der Kamerafahrt.
+function ldGear(){ return 1 + (LD.ARC/LD.ARC_TOP - 1) * LD.up; }
 
 // Rastet auf das Band, das gerade im Blick ist
 function ldSnap(v){
