@@ -314,7 +314,15 @@
   <div class="view active" id="view-find">
     <div id="map"></div>
     <div class="map-btns">
-      <button class="mbtn" id="nowBtn" onclick="toggleNow()" data-i18n="now">JETZT</button>
+      <div class="date-filter">
+        <button class="mbtn" id="dateFilterBtn" onclick="toggleDateMenu()">HEUTE</button>
+        <div class="date-menu" id="dateMenu" style="display:none">
+          <button onclick="setDateFilter('all')" data-i18n="allDates">Alle Daten</button>
+          <button onclick="setDateFilter('month')" data-i18n="thisMonth">Diesen Monat</button>
+          <button onclick="setDateFilter('week')" data-i18n="thisWeek">Diese Woche</button>
+          <button onclick="setDateFilter('today')" data-i18n="today" class="active">Heute</button>
+        </div>
+      </div>
     </div>
     <div id="sheet" class="snap s-half">
       <div class="handle" id="handle">
@@ -452,7 +460,7 @@
 // ================= i18n (UI-Texte DE/EN/FR) =================
 const I18N = {
   de:{
-    now:"JETZT", random:"Zufälliges Event", events:"EVENTS", showList:"LISTE ANZEIGEN",
+    now:"JETZT", allDates:"Alle Daten", thisMonth:"Diesen Monat", thisWeek:"Diese Woche", today:"Heute", random:"Zufälliges Event", events:"EVENTS", showList:"LISTE ANZEIGEN",
     appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
     language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
     submitEvent:"Event einreichen",
@@ -481,10 +489,10 @@ const I18N = {
     toastNow:"Zeigt nur, was jetzt gerade läuft", toastRsvp:"Bis dann! 🤝",
     toastCal:"Termin erstellt — im Kalender öffnen", toastShare:"Link kopiert — auch ohne App öffenbar",
     soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"beginnt bald",
-    cat_all:"Alle", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Other"
+    cat_all:"Alle", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
   },
   en:{
-    now:"NOW", random:"Random event", events:"EVENTS", showList:"SHOW LIST",
+    now:"NOW", allDates:"All dates", thisMonth:"This month", thisWeek:"This week", today:"Today", random:"Random event", events:"EVENTS", showList:"SHOW LIST",
     appearance:"Appearance", day:"Day", night:"Night",
     language:"Language", city:"City", notifications:"Notifications", off:"Off",
     submitEvent:"Submit event",
@@ -513,10 +521,10 @@ const I18N = {
     toastNow:"Showing only what's live right now", toastRsvp:"See you there! 🤝",
     toastCal:"Event created — open in your calendar", toastShare:"Link copied — opens without the app too",
     soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"starts soon",
-    cat_all:"All", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Other"
+    cat_all:"All", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
   },
   fr:{
-    now:"MAINTENANT", random:"Événement au hasard", events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE",
+    now:"MAINTENANT", allDates:"Toutes les dates", thisMonth:"Ce mois", thisWeek:"Cette semaine", today:"Aujourd'hui", random:"Événement au hasard", events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE",
     appearance:"Apparence", day:"Jour", night:"Nuit",
     language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
     submitEvent:"Proposer un événement",
@@ -545,7 +553,7 @@ const I18N = {
     toastNow:"Affiche seulement ce qui se passe maintenant", toastRsvp:"À bientôt ! 🤝",
     toastCal:"Événement créé — ouvre-le dans ton agenda", toastShare:"Lien copié — s'ouvre même sans l'app",
     soonMin:"DANS {n} MIN", soonH:"DANS {n} H", icsSoon:"commence bientôt",
-    cat_all:"Tous", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_food:"Food", cat_other:"Autres"
+    cat_all:"Tous", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Autres"
   }
 };
 let LANG = "de";
@@ -633,7 +641,7 @@ const CATS = [
 ];
 
 // ================= State =================
-let state = { cat:"all", now:false, saved:new Set(), rsvp:new Set(), view:"find", sheet:"half" };
+let state = { cat:"all", dateFilter:"today", saved:new Set(), rsvp:new Set(), view:"find", sheet:"half" };
 try{ state.saved = new Set(JSON.parse(localStorage.getItem("2be_saved")||"[]")); }catch(e){}
 try{ state.rsvp  = new Set(JSON.parse(localStorage.getItem("2be_rsvp")||"[]")); }catch(e){}
 // Demo-Basiswerte «gehen hin» (später echt aus der Datenbank)
@@ -656,9 +664,37 @@ function soonLabel(e){
 }
 
 function filtered(){
-  return EVENTS
-    .filter(e => (state.cat==="all" || e.tags.includes(state.cat)) && (!state.now || isLive(e)))
-    .sort((a,b)=>a.start-b.start);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+  
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  
+  return EVENTS.filter(e => {
+    // Kategorie-Filter
+    if(state.cat !== "all" && !e.tags.includes(state.cat)) return false;
+    
+    // Datum-Filter
+    const eStart = e.start;
+    switch(state.dateFilter) {
+      case "today":
+        return eStart >= today && eStart < tomorrow;
+      case "week":
+        return eStart >= weekStart && eStart < weekEnd;
+      case "month":
+        return eStart >= monthStart && eStart < monthEnd;
+      case "all":
+      default:
+        return true;
+    }
+  }).sort((a,b)=>a.start-b.start);
 }
 function persist(){
   try{
@@ -766,11 +802,12 @@ function renderMap(){
   markers.forEach(m=>m.remove()); markers=[];
   filtered().forEach(e => {
     const live = isLive(e);
+    const showLiveHighlight = state.dateFilter !== "today" && live; // Auto-highlight live wenn nicht "today"
     const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
-    const size = live ? 22 : 16;
+    const size = (live || showLiveHighlight) ? 22 : 16;
     const icon = L.divIcon({
       className:"",
-      html:`<div class="pin ${live?'live':''}" style="${live?'':'background:'+color}"></div>`,
+      html:`<div class="pin ${showLiveHighlight?'live':''}" style="${(live||showLiveHighlight)?'':'background:'+color}"></div>`,
       iconSize:[size,size], iconAnchor:[size/2,size/2]
     });
     const m = L.marker([e.lat,e.lng],{icon}).addTo(map);
