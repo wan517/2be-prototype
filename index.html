@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- "default" statt "black-translucent": iOS reserviert die Statusleiste selbst, statt die
+     App darunter durchlaufen zu lassen. Damit faellt env(safe-area-inset-top) auf 0 und der
+     cremefarbene Block oben schrumpft um rund 45 px. Der Hintergrund der Leiste kommt aus
+     theme-color unten, das mit Tag/Nacht mitwandert. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="2BE">
 <meta name="theme-color" content="#ffffff" id="themeColor">
-<title>2BE — Prototyp v9</title>
+<title>2BE — Prototyp v9.1</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root{
@@ -57,6 +61,13 @@
   .logo span{background:var(--accent);padding:0 4px;color:#fff}
   .h-right{display:flex;align-items:center;gap:14px}
   .city{font-size:12px;font-weight:700;letter-spacing:1px}
+  /* Handy: Kopfzeile so flach wie möglich — der gewonnene Platz geht an die Karte.
+     Muss NACH der Basis-Regel stehen, sonst gewinnt die. */
+  @media (max-width:520px){
+    header{min-height:42px;padding:0 14px;padding-top:env(safe-area-inset-top, 0px)}
+    .logo{font-size:19px}
+    .city{font-size:11px}
+  }
   .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
   .view.active{display:flex}
   #view-find{overflow:hidden;position:relative}
@@ -303,11 +314,14 @@
   .sa-hint{flex:none;text-align:center;font-size:10px;letter-spacing:1px;text-transform:uppercase;
     color:var(--faint);padding:0 16px 18px}
   /* nav */
-  nav{height:64px;flex:none;display:flex;border-top:2px solid var(--fg);background:var(--bg);
-    z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  /* Wichtig: die Höhe MUSS die Home-Indikator-Zone zusätzlich enthalten, sonst
+     frisst das padding-bottom die 64px auf und die Beschriftung wird abgeschnitten. */
+  nav{flex:none;display:flex;border-top:2px solid var(--fg);background:var(--bg);z-index:20;
+    min-height:calc(62px + env(safe-area-inset-bottom, 0px));
+    padding-bottom:env(safe-area-inset-bottom, 0px)}
   nav button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:700;
-    letter-spacing:1px;color:var(--faint);text-transform:uppercase;font-family:inherit}
+    align-items:center;justify-content:center;gap:4px;padding:8px 0;font-size:10px;font-weight:700;
+    line-height:1.1;letter-spacing:1px;color:var(--faint);text-transform:uppercase;font-family:inherit}
   nav button svg{width:24px;height:24px;stroke:var(--faint);fill:none;stroke-width:2;transition:stroke .45s}
   nav button.active{color:var(--fg)}
   nav button.active svg{stroke:var(--fg)}
@@ -379,7 +393,7 @@
       <div class="p-row"><span data-i18n="city">Stadt</span><span class="val">Bern</span></div>
       <div class="p-row"><span data-i18n="notifications">Benachrichtigungen</span><span class="val" data-i18n="off">Aus</span></div>
       <div class="p-row" onclick="openSubmit()" style="cursor:pointer"><span data-i18n="submitEvent">Event einreichen</span><span class="val">→</span></div>
-      <div class="p-note" data-i18n="profileNote">Prototyp v9 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.</div>
+      <div class="p-note" data-i18n="profileNote">Prototyp v9.1 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.</div>
     </div>
   </div>
 
@@ -484,7 +498,7 @@ const I18N = {
     appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
     language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
     submitEvent:"Event einreichen",
-    profileNote:"Prototyp v9 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.",
+    profileNote:"Prototyp v9.1 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, Titel, Datum, Link — fertig in 30 Sekunden. Das Team prüft jede Einreichung, bevor sie live geht.",
     lblFlyer:"Flyer-Foto", flyerCta:"Foto aufnehmen oder hochladen", errFlyer:"Flyer-Foto fehlt",
@@ -518,7 +532,7 @@ const I18N = {
     appearance:"Appearance", day:"Day", night:"Night",
     language:"Language", city:"City", notifications:"Notifications", off:"Off",
     submitEvent:"Submit event",
-    profileNote:"Prototype v9 — favourites, RSVP and appearance are stored locally in your browser.",
+    profileNote:"Prototype v9.1 — favourites, RSVP and appearance are stored locally in your browser.",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, title, date, link — done in 30 seconds. The team reviews every submission before it goes live.",
     lblFlyer:"Flyer photo", flyerCta:"Take or upload a photo", errFlyer:"Flyer photo missing",
@@ -552,7 +566,7 @@ const I18N = {
     appearance:"Apparence", day:"Jour", night:"Nuit",
     language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
     submitEvent:"Proposer un événement",
-    profileNote:"Prototype v9 — favoris, RSVP et apparence sont stockés localement dans ton navigateur.",
+    profileNote:"Prototype v9.1 — favoris, RSVP et apparence sont stockés localement dans ton navigateur.",
     navFind:"explorer", navProfile:"profil",
     subIntro:"Flyer, titre, date, lien — prêt en 30 secondes. L'équipe vérifie chaque proposition avant sa publication.",
     lblFlyer:"Photo du flyer", flyerCta:"Prendre ou importer une photo", errFlyer:"Photo du flyer manquante",
@@ -985,9 +999,16 @@ function setSheet(s, animate=true){
   el.style.transform = `translateY(${sheetY(s)}px)`;
   $("handleLabel").textContent = s==="map" ? t("showList") : t("events");
 }
+// Nach einer Griff-Berührung fährt das Sheet unter dem Finger weg. iOS schickt den
+// zugehörigen Klick erst danach — er landete deshalb auf der Karte, die nun dort liegt
+// («Liste anzeigen» öffnete direkt das oberste Event). Kurze Sperre fängt das ab.
+let sheetTapGuardUntil = 0;
 function initSheet(){
   const h = $("handle");
   let startY=0, startT=0, moved=false;
+  sheet().addEventListener("click", ev=>{
+    if(performance.now() < sheetTapGuardUntil){ ev.stopPropagation(); ev.preventDefault(); }
+  }, true);
   h.addEventListener("pointerdown", ev=>{
     startY = ev.clientY; moved=false;
     const m = new DOMMatrixReadOnly(getComputedStyle(sheet()).transform);
@@ -1005,6 +1026,7 @@ function initSheet(){
   });
   h.addEventListener("pointerup", ev=>{
     h.releasePointerCapture(ev.pointerId);
+    sheetTapGuardUntil = performance.now() + 500;  // Sperre deckt die Sheet-Animation ab
     if(!moved){ // Tap auf den Griff: umschalten
       setSheet(state.sheet==="map" ? "half" : "map");
       return;
