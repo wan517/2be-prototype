@@ -100,7 +100,7 @@
     border-radius:22px 22px 0 0;
     display:flex;flex-direction:column;will-change:transform;
   }
-  #sheet.snap{transition:transform .38s cubic-bezier(.22,1,.36,1)}
+  #sheet.snap{transition:transform .44s cubic-bezier(.17,.89,.32,1.02)}
   .handle{flex:none;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:6px;
     cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
   .handle:active{cursor:grabbing}
@@ -129,10 +129,10 @@
   #sheet.s-half .sheet-body{padding-bottom:45%}
   #sheet.s-list .sheet-body{padding-bottom:130px}
   #sheet.s-map .sheet-body{padding-bottom:0}
-  /* Datum-Filter: Pill in der Chip-Zeile + Auswahl-Popover */
-  .dfilter{position:relative;flex:none}
+  /* Datum-Filter: Pill in der Chip-Zeile, Popover haengt an .map-top —
+     NICHT in .filters, denn dessen overflow-x:auto wuerde es abschneiden. */
   .datepop{
-    position:absolute;top:calc(100% + 6px);left:0;min-width:168px;z-index:20;
+    position:absolute;top:calc(100% + 2px);left:14px;min-width:168px;z-index:20;
     background:var(--bg);border:2px solid var(--fg);border-radius:16px;overflow:hidden;display:none;
     box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
@@ -403,6 +403,7 @@
     <div class="map-top" id="mapTop">
       <div class="ticker" id="ticker" style="display:none"></div>
       <div class="filters" id="filters"></div>
+      <div class="datepop" id="datePop"></div>
     </div>
     <div id="sheet" class="snap s-map">
       <div class="handle" id="handle">
@@ -538,7 +539,7 @@
 // ================= i18n (UI-Texte DE/EN/FR) =================
 const I18N = {
   de:{
-    events:"EVENTS", showList:"LISTE ANZEIGEN",
+    events:"EVENTS", showList:"LISTE ANZEIGEN", showMap:"KARTE ANZEIGEN",
     range_all:"Alle Daten", range_month:"Diesen Monat", range_week:"Diese Woche", range_today:"Heute",
     rs_any:"ZEITRAUM", rs_all:"ALLE", rs_month:"MONAT", rs_week:"WOCHE", rs_today:"HEUTE",
     appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
@@ -574,7 +575,7 @@ const I18N = {
     cat_all:"Alle", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
   },
   en:{
-    events:"EVENTS", showList:"SHOW LIST",
+    events:"EVENTS", showList:"SHOW LIST", showMap:"SHOW MAP",
     range_all:"All dates", range_month:"This month", range_week:"This week", range_today:"Today",
     rs_any:"DATE", rs_all:"ALL", rs_month:"MONTH", rs_week:"WEEK", rs_today:"TODAY",
     appearance:"Appearance", day:"Day", night:"Night",
@@ -610,7 +611,7 @@ const I18N = {
     cat_all:"All", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
   },
   fr:{
-    events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE",
+    events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE", showMap:"AFFICHER LA CARTE",
     range_all:"Toutes les dates", range_month:"Ce mois", range_week:"Cette semaine", range_today:"Aujourd'hui",
     rs_any:"DATE", rs_all:"TOUTES", rs_month:"MOIS", rs_week:"SEMAINE", rs_today:"AUJ.",
     appearance:"Apparence", day:"Jour", night:"Nuit",
@@ -916,10 +917,7 @@ function initLang(){
 function renderFilters(){
   // Datum-Pill steht ganz vorne in derselben Zeile wie die Kategorie-Chips (v10)
   $("filters").innerHTML =
-    `<div class="dfilter">
-       <button class="chip" id="dateBtn" onclick="toggleDatePop(event)">ALLE</button>
-       <div class="datepop" id="datePop"></div>
-     </div>` +
+    `<button class="chip" id="dateBtn" onclick="toggleDatePop(event)">ALLE</button>` +
     CATS.map(c =>
     `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${catLabel(c.key)}</button>`).join("");
 }
@@ -1178,7 +1176,7 @@ function setSheet(s, animate=true){
   el.classList.remove("s-list","s-half","s-map");
   el.classList.add("s-"+s);
   el.style.transform = `translateY(${sheetY(s)}px)`;
-  $("handleLabel").textContent = s==="map" ? t("showList") : t("events");
+  $("handleLabel").textContent = s==="map" ? t("showList") : (s==="list" ? t("showMap") : t("events"));
 }
 // Nach einer Griff-Berührung fährt das Sheet unter dem Finger weg. iOS schickt den
 // zugehörigen Klick erst danach — er landete deshalb auf der Karte, die nun dort liegt
@@ -1186,12 +1184,13 @@ function setSheet(s, animate=true){
 let sheetTapGuardUntil = 0;
 function initSheet(){
   const h = $("handle");
-  let startY=0, startT=0, moved=false;
+  let startY=0, startT=0, moved=false, vy=0, lastY=0, lastT=0;
   sheet().addEventListener("click", ev=>{
     if(performance.now() < sheetTapGuardUntil){ ev.stopPropagation(); ev.preventDefault(); }
   }, true);
   h.addEventListener("pointerdown", ev=>{
     startY = ev.clientY; moved=false;
+    vy=0; lastY=ev.clientY; lastT=performance.now();
     const m = new DOMMatrixReadOnly(getComputedStyle(sheet()).transform);
     startT = m.m42;
     sheet().classList.remove("snap");
@@ -1201,22 +1200,25 @@ function initSheet(){
     if(!h.hasPointerCapture(ev.pointerId)) return;
     const dy = ev.clientY - startY;
     if(Math.abs(dy)>6) moved=true;
+    const now = performance.now(), dt = now - lastT;
+    if(dt > 0){ vy = 0.7*((ev.clientY-lastY)/dt) + 0.3*vy; lastY = ev.clientY; lastT = now; }
     const y = Math.min(Math.max(startT+dy, sheetY("list")), sheetY("map"));
     sheet().style.transform = `translateY(${y}px)`;
   });
   h.addEventListener("pointerup", ev=>{
     h.releasePointerCapture(ev.pointerId);
     sheetTapGuardUntil = performance.now() + 500;  // Sperre deckt die Sheet-Animation ab
-    if(!moved){ // Tap auf den Griff: umschalten
-      setSheet(state.sheet==="map" ? "half" : "map");
+    if(!moved){ // Tap auf den Griff: Karte <-> volle Liste, ohne Umweg ueber halb
+      setSheet(state.sheet==="list" ? "map" : "list");
       return;
     }
-    // zum nächstgelegenen Snap-Punkt
+    // Snap-Punkt nach der PROJIZIERTEN Position: die Wurfgeschwindigkeit zaehlt mit,
+    // damit ein kurzer Flick nach oben die Liste ganz aufzieht statt auf halb zu landen.
     const m = new DOMMatrixReadOnly(getComputedStyle(sheet()).transform);
-    const y = m.m42;
+    const proj = m.m42 + vy*170;
     let best="half", bd=Infinity;
     ["list","half","map"].forEach(s=>{
-      const d = Math.abs(sheetY(s)-y);
+      const d = Math.abs(sheetY(s)-proj);
       if(d<bd){bd=d;best=s;}
     });
     setSheet(best);
