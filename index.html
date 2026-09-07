@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- "default" statt "black-translucent": iOS reserviert die Statusleiste selbst, statt die
-     App darunter durchlaufen zu lassen. Damit faellt env(safe-area-inset-top) auf 0 und der
-     cremefarbene Block oben schrumpft um rund 45 px. Der Hintergrund der Leiste kommt aus
-     theme-color unten, das mit Tag/Nacht mitwandert. -->
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- "black-translucent": die App laeuft unter der Statusleiste durch, die Karte reicht bis an
+     den oberen Rand und die Dynamic Island schwebt darueber. Die Schrift der Statusleiste ist
+     in diesem Modus IMMER weiss - jede Ansicht muss oben also selbst fuer dunklen Grund sorgen:
+     FIND ueber den Verlauf in .map-head, die anderen ueber .safe-top in Akzentviolett. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="2BE">
 <meta name="theme-color" content="#ffffff" id="themeColor">
 <title>2BE — Prototyp v10</title>
@@ -55,24 +55,24 @@
     body{background:var(--bg)}
     #app{max-width:none;box-shadow:none}
   }
-  header{
-    min-height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;
-    padding:0 16px;padding-top:env(safe-area-inset-top);
-    border-bottom:2px solid var(--fg);background:var(--bg);z-index:20;
+  /* Kopfzeile schwebt ueber der Karte statt als Balken davor (v12).
+     Der Verlauf deckt die Statusleisten-Zone mit ab - sonst waere die weisse
+     Systemschrift auf der hellen Tageskarte unlesbar. */
+  .map-head{
+    display:flex;align-items:center;justify-content:space-between;pointer-events:auto;
+    padding:calc(env(safe-area-inset-top, 0px) + 7px) 16px 14px;
+    background:linear-gradient(180deg,rgba(0,0,0,.60) 0%,rgba(0,0,0,.40) 55%,rgba(0,0,0,0) 100%);
   }
-  .logo{font-weight:800;font-size:22px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
-  .logo-sa{height:26px;width:auto;fill:var(--fg);flex:none}
+  .logo{font-weight:800;font-size:20px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;
+    color:#fff;cursor:pointer}
   .logo span{background:var(--accent);padding:0 4px;color:#fff}
-  .h-right{display:flex;align-items:center;gap:14px}
-  .city{font-size:12px;font-weight:700;letter-spacing:1px}
-  /* Handy: Kopfzeile so flach wie möglich — der gewonnene Platz geht an die Karte.
-     Muss NACH der Basis-Regel stehen, sonst gewinnt die. */
-  @media (max-width:520px){
-    header{min-height:42px;padding:0 14px;padding-top:env(safe-area-inset-top, 0px)}
-    .logo{font-size:19px}
-    .logo-sa{height:22px}
-    .city{font-size:11px}
-  }
+  .logo-sa{height:23px;width:auto;fill:#fff;flex:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .city{font-size:12px;font-weight:700;letter-spacing:1px;color:#fff;
+    text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  /* Statusleisten-Zone in den Ansichten ohne Karte - Violett, damit die weisse Systemschrift traegt */
+  .safe-top{flex:none;height:env(safe-area-inset-top, 0px);background:var(--accent)}
+  .view-title{flex:none;padding:14px 16px 12px;font-size:19px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--fg);background:var(--bg)}
   .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
   .view.active{display:flex}
   #view-find{overflow:hidden;position:relative}
@@ -251,6 +251,17 @@
     text-decoration:none;border-radius:999px}
   .d-livebar{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;
     padding:8px 16px;text-transform:uppercase}
+  /* 2BE-Tab: zwei Bereiche — My Line Up / Editor's Choice (v11) */
+  #view-saved{overflow:hidden;background:var(--bg)}
+  .tabbar{flex:none;display:flex;border-bottom:2px solid var(--fg);background:var(--bg)}
+  .tabbar .tab{flex:1;background:none;border:none;padding:15px 0 13px;font-family:inherit;
+    font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--faint);
+    cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+  .tabbar .tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+  .tabpane{flex:1;min-height:0;display:none;flex-direction:column}
+  .tabpane.active{display:flex}
+  #pane-lineup{overflow-y:auto}
+  #pane-editors{overflow:hidden}
   /* timeline */
   .timeline{padding:24px 16px 24px 24px}
   .tl-head{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
@@ -261,17 +272,19 @@
     justify-content:center;font-size:11px;font-weight:800;text-align:center;line-height:1.1}
   .tl-day{font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:10px;padding-top:6px;color:var(--muted)}
   .tl-card{
-    display:flex;align-items:stretch;gap:0;margin-bottom:10px;cursor:pointer;
-    border:1.5px solid var(--fg);background:var(--bg);overflow:hidden;border-radius:16px;
+    display:flex;align-items:center;gap:0;margin-bottom:10px;cursor:pointer;
+    background:#fff;color:#111;overflow:hidden;border-radius:3px;padding:7px 7px 7px 7px;
+    box-shadow:0 2px 9px rgba(0,0,0,.15);
   }
-  .tl-card img{width:64px;height:64px;object-fit:cover;flex:none;display:block;
-    filter:grayscale(20%) contrast(1.05);border-right:1.5px solid var(--fg)}
+  html[data-theme="dark"] .tl-card{background:#d9d7d1;box-shadow:0 2px 9px rgba(0,0,0,.45)}
+  .tl-card img{width:58px;height:58px;object-fit:cover;flex:none;display:block;
+    filter:grayscale(20%) contrast(1.05)}
   .tl-info{flex:1;min-width:0;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
   .tl-t{font-size:13px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-s{font-size:11px;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-m{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
-  .tl-x{flex:none;background:none;border:none;cursor:pointer;padding:0 12px;display:flex;align-items:center}
-  .tl-x svg{width:18px;height:18px;stroke:var(--fg);fill:var(--fg);stroke-width:2}
+  .tl-s{font-size:11px;text-transform:uppercase;color:#5c5a55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl-m{font-size:10px;font-weight:700;color:#7a7873;text-transform:uppercase;letter-spacing:.5px}
+  .tl-x{flex:none;background:none;border:none;cursor:pointer;padding:0 10px;display:flex;align-items:center}
+  .tl-x svg{width:18px;height:18px;stroke:#111;fill:#111;stroke-width:2}
   /* profile */
   .profile{padding:24px 16px}
   .p-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
@@ -317,6 +330,51 @@
     border:1.5px solid var(--fg);font-size:10px;font-weight:800;letter-spacing:.5px;
     padding:5px 10px;text-transform:uppercase;color:var(--fg);border-radius:999px}
   .f-hint{font-size:11px;color:var(--faint);line-height:1.5}
+  /* Einreichen in drei Schritten (v11) */
+  .s-steps{display:flex;gap:8px;margin-bottom:2px}
+  .s-step{flex:1;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;
+    letter-spacing:.8px;text-transform:uppercase;color:var(--faint)}
+  .s-step b{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--faint);flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:10px}
+  .s-step.on{color:var(--fg)}
+  .s-step.on b{border-color:var(--accent);background:var(--accent);color:#fff}
+  .s-pane{display:none;flex-direction:column;gap:18px}
+  .s-pane.active{display:flex}
+  .s-nav{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+  .s-nav .ghost{border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
+    font-size:13px;letter-spacing:.5px;padding:15px 0;cursor:pointer;text-transform:uppercase;
+    font-family:inherit;border-radius:999px}
+  .pickrow{display:flex;gap:8px;flex-wrap:wrap}
+  .chip.plain{box-shadow:none}
+  /* Bildausschnitt: verschieben und zoomen */
+  .crop-box{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a;
+    touch-action:none;cursor:grab;border-radius:2px}
+  .crop-box:active{cursor:grabbing}
+  .crop-box img{position:absolute;left:50%;top:50%;max-width:none;display:block;
+    transform-origin:center;user-select:none;-webkit-user-drag:none}
+  .crop-frame{padding:11px 11px 0;background:#fff;border-radius:3px;box-shadow:0 3px 14px rgba(0,0,0,.16)}
+  .crop-frame .cf-bottom{height:34px}
+  html[data-theme="dark"] .crop-frame{background:#d9d7d1}
+  .crop-tools{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .crop-tools input[type=range]{flex:1;accent-color:var(--accent)}
+  .crop-tools button{width:34px;height:34px;border-radius:50%;border:2px solid var(--fg);
+    background:var(--bg);color:var(--fg);font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+  /* Vorschau */
+  .prev-tabs{display:flex;border-bottom:2px solid var(--fg)}
+  .prev-tabs button{flex:1;background:none;border:none;padding:12px 0 10px;font-family:inherit;
+    font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--faint);
+    cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+  .prev-tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+  .prev-frame{border:1px dashed var(--hair);border-radius:18px;padding:14px;background:var(--bg)}
+  .prev-frame .pol{cursor:default}
+  .prev-img{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a}
+  .prev-img img{position:absolute;left:50%;top:50%;max-width:none;display:block;transform-origin:center;
+    filter:grayscale(20%) contrast(1.05)}
+  .prev-full{background:var(--bg);border-radius:14px;overflow:hidden}
+  .prev-full .d-body{padding:16px 14px 18px;gap:14px}
+  .prev-full .d-title{font-size:21px}
+  .prev-full .d-sub{font-size:14px}
+  .prev-inert{opacity:.55;pointer-events:none}
   .f-err{font-size:11px;font-weight:700;color:#d40000;display:none}
   .f-err.show{display:block}
   .s-done{display:none;flex-direction:column;align-items:center;gap:16px;
@@ -327,9 +385,10 @@
   .s-done h3{font-size:20px;font-weight:800;text-transform:uppercase}
   .s-done p{font-size:13px;line-height:1.6;color:var(--muted);max-width:280px}
   /* ===== Plakatsäule (verstecktes Schmuckstück — Tap aufs Logo) ===== */
-  #saeule{position:absolute;inset:0;z-index:850;display:none;flex-direction:column;overflow:hidden;
+  #saeule{position:absolute;inset:0;z-index:850;display:none;flex-direction:column;overflow:hidden}
+  #saeule, #pane-editors{
     background:linear-gradient(180deg,#DCE4E8 0%,#EDEAE0 55%,#C9C2B2 78%,#A89F8C 100%)}
-  html[data-theme="dark"] #saeule{
+  html[data-theme="dark"] #saeule, html[data-theme="dark"] #pane-editors{
     background:linear-gradient(180deg,#04060C 0%,#0B1020 50%,#141a2a 75%,#241d10 100%)}
   #saeule.open{display:flex}
   .sa-top{flex:none;display:flex;align-items:center;gap:14px;padding:14px 16px;z-index:5}
@@ -364,6 +423,13 @@
   nav button .count{position:absolute;top:-4px;right:-10px;background:var(--accent);color:#fff;
     font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;
     display:flex;align-items:center;justify-content:center;padding:0 3px}
+  .lightbox{position:absolute;inset:0;z-index:960;background:rgba(0,0,0,.94);display:none;
+    align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:26px 18px}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:82%;object-fit:contain;display:block}
+  .lightbox .lb-hint{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+    color:rgba(255,255,255,.65)}
+  .d-imgwrap{cursor:zoom-in}
   .toast{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);background:var(--fg);
     color:var(--bg);font-size:12px;font-weight:600;padding:10px 18px;opacity:0;border-radius:999px;
     transition:opacity .25s;pointer-events:none;z-index:950;white-space:nowrap}
@@ -376,31 +442,28 @@
 </head>
 <body>
 <div id="app">
-  <header>
-    <div class="logo" onclick="openSaeule()" style="cursor:pointer">
-      <!-- Provisorische Plakatsäulen-Silhouette. Das finale Logo kommt vom Designer —
-           dann NUR dieses <svg> ersetzen, sonst nichts anfassen. -->
-      <svg class="logo-sa" viewBox="0 0 24 34" aria-hidden="true">
-        <circle cx="12" cy="2.2" r="1.4"/>
-        <rect x="11.4" y="3" width="1.2" height="2.2"/>
-        <path d="M5.5 9a6.5 4.6 0 0 1 13 0z"/>
-        <rect x="4.6" y="9" width="14.8" height="1.8"/>
-        <rect x="6.2" y="10.8" width="11.6" height="17"/>
-        <rect x="5" y="27.8" width="14" height="1.6"/>
-        <rect x="3.8" y="29.4" width="16.4" height="3.2"/>
-      </svg>
-      <span>2BE</span>
-    </div>
-    <div class="h-right">
-      <div class="city">BERN ▾</div>
-    </div>
-  </header>
-
   <!-- FIND -->
   <div class="view active" id="view-find">
     <div id="map"></div>
     <!-- Overlay am oberen Kartenrand: Live-Band, darunter die Filter-Chips (Datum-Pill vorne) -->
     <div class="map-top" id="mapTop">
+      <div class="map-head">
+        <div class="logo" onclick="openSaeule()">
+          <!-- Provisorische Plakatsaeulen-Silhouette. Das finale Logo kommt vom Designer -
+               dann NUR dieses <svg> ersetzen, sonst nichts anfassen. -->
+          <svg class="logo-sa" viewBox="0 0 24 34" aria-hidden="true">
+            <circle cx="12" cy="2.2" r="1.4"/>
+            <rect x="11.4" y="3" width="1.2" height="2.2"/>
+            <path d="M5.5 9a6.5 4.6 0 0 1 13 0z"/>
+            <rect x="4.6" y="9" width="14.8" height="1.8"/>
+            <rect x="6.2" y="10.8" width="11.6" height="17"/>
+            <rect x="5" y="27.8" width="14" height="1.6"/>
+            <rect x="3.8" y="29.4" width="16.4" height="3.2"/>
+          </svg>
+          <span>2BE</span>
+        </div>
+        <div class="city">BERN &#9662;</div>
+      </div>
       <div class="ticker" id="ticker" style="display:none"></div>
       <div class="filters" id="filters"></div>
       <div class="datepop" id="datePop"></div>
@@ -416,13 +479,29 @@
     </div>
   </div>
 
-  <!-- 2BE saved -->
+  <!-- 2BE: My Line Up / Editor's Choice -->
   <div class="view" id="view-saved">
-    <div class="timeline" id="timeline"></div>
+    <div class="safe-top"></div>
+    <div class="ticker" id="tickerSaved" style="display:none"></div>
+    <div class="tabbar">
+      <button class="tab on" id="tab-lineup"  onclick="setSavedTab('lineup')"  data-i18n="tabLineup">My Line Up</button>
+      <button class="tab"    id="tab-editors" onclick="setSavedTab('editors')" data-i18n="tabEditors">Editor's Choice</button>
+    </div>
+    <div class="tabpane active" id="pane-lineup">
+      <div class="timeline" id="timeline"></div>
+    </div>
+    <!-- Editor's Choice ist vorerst die Plakatsäule. Ob das so bleibt, ist offen —
+         deshalb steckt der Inhalt in einem eigenen Pane und ist austauschbar. -->
+    <div class="tabpane" id="pane-editors">
+      <div class="sa-scene" id="saSceneTab"></div>
+      <div class="sa-hint" data-i18n="saHint">Plakat antippen → Event · Tür → einreichen</div>
+    </div>
   </div>
 
   <!-- PROFILE -->
   <div class="view" id="view-profile">
+    <div class="safe-top"></div>
+    <div class="view-title" data-i18n="navProfile">profile</div>
     <div class="profile">
       <div class="p-row"><span data-i18n="appearance">Erscheinungsbild</span>
         <div class="lang">
@@ -454,45 +533,132 @@
       <div class="s-htitle" data-i18n="submitEvent">Event einreichen</div>
     </div>
     <div class="s-body" id="submitForm">
-      <div class="s-intro" data-i18n="subIntro">Flyer, Titel, Datum, Link — fertig in 30 Sekunden.
-        Das Team prüft jede Einreichung, bevor sie live geht.</div>
-      <div class="f-field">
-        <div class="f-label" data-i18n="lblFlyer">Flyer-Foto</div>
-        <div class="f-flyer" id="flyerBox" onclick="$('flyerInput').click()">
-          <div class="fl-icon">＋</div>
-          <div class="fl-txt" data-i18n="flyerCta">Foto aufnehmen oder hochladen</div>
-        </div>
-        <input type="file" id="flyerInput" accept="image/*" style="display:none" onchange="flyerPicked(this)">
-        <div class="f-err" id="err-flyer" data-i18n="errFlyer">Flyer-Foto fehlt</div>
+      <div class="s-steps">
+        <div class="s-step on" id="sstep-1"><b>1</b><span data-i18n="stepInfos">Infos</span></div>
+        <div class="s-step"    id="sstep-2"><b>2</b><span data-i18n="stepImage">Bild</span></div>
+        <div class="s-step"    id="sstep-3"><b>3</b><span data-i18n="stepPreview">Vorschau</span></div>
       </div>
-      <div class="f-field">
-        <div class="f-label" data-i18n="lblTitle">Titel</div>
-        <input type="text" id="subTitle" data-i18n-ph="phTitle" placeholder="z.B. MATO : SOUSSOL" maxlength="60">
-        <div class="f-err" id="err-title" data-i18n="errTitle">Titel fehlt</div>
-      </div>
-      <div class="f-row">
+
+      <!-- Schritt 1: Infos -->
+      <div class="s-pane active" id="spane-1">
+        <div class="s-intro" data-i18n="subIntro">Flyer, Titel, Datum, Link — fertig in 30 Sekunden.
+          Das Team prüft jede Einreichung, bevor sie live geht.</div>
         <div class="f-field">
-          <div class="f-label" data-i18n="lblDate">Datum</div>
-          <input type="date" id="subDate">
+          <div class="f-label" data-i18n="lblTitle">Titel</div>
+          <input type="text" id="subTitle" data-i18n-ph="phTitle" placeholder="z.B. MATO : SOUSSOL" maxlength="60">
+          <div class="f-err" id="err-title" data-i18n="errTitle">Titel fehlt</div>
         </div>
         <div class="f-field">
-          <div class="f-label"><span data-i18n="lblTime">Zeit</span> <span class="opt" data-i18n="optional">optional</span></div>
-          <input type="time" id="subTime">
+          <div class="f-label" data-i18n="lblCat">Kategorie</div>
+          <div class="pickrow" id="catPick"></div>
+          <div class="f-err" id="err-cat" data-i18n="errCat">Kategorie fehlt</div>
+        </div>
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblArt">Art</div>
+          <div class="pickrow" id="artPick"></div>
+        </div>
+        <div class="f-row">
+          <div class="f-field">
+            <div class="f-label" data-i18n="lblDateFrom">Datum von</div>
+            <input type="date" id="subDate">
+          </div>
+          <div class="f-field" id="dateToField">
+            <div class="f-label"><span data-i18n="lblDateTo">Datum bis</span> <span class="opt" id="dateToOpt" data-i18n="optional">optional</span></div>
+            <input type="date" id="subDateEnd">
+          </div>
+        </div>
+        <div class="f-err" id="err-date" style="margin-top:-12px" data-i18n="errDate">Datum fehlt oder liegt in der Vergangenheit</div>
+        <div class="f-row">
+          <div class="f-field">
+            <div class="f-label" data-i18n="lblTimeFrom">Zeit von</div>
+            <input type="time" id="subTime">
+          </div>
+          <div class="f-field">
+            <div class="f-label"><span data-i18n="lblTimeTo">Zeit bis</span> <span class="opt" data-i18n="optional">optional</span></div>
+            <input type="time" id="subTimeEnd">
+          </div>
+        </div>
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblLoc">Location / Adresse</div>
+          <input type="text" id="subAddr1" data-i18n-ph="phLoc" placeholder="z.B. Käfigturm 43" maxlength="60">
+          <div class="f-err" id="err-addr" data-i18n="errLoc">Adresse fehlt</div>
+        </div>
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblZip">PLZ &amp; Ort</div>
+          <input type="text" id="subAddr2" data-i18n-ph="phZip" placeholder="z.B. 3011 Bern" maxlength="40">
+        </div>
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblHost">Veranstalter</div>
+          <input type="text" id="subHost" data-i18n-ph="phHost" placeholder="Wer steht dahinter?" maxlength="50">
+          <div class="f-err" id="err-host" data-i18n="errHost">Veranstalter fehlt</div>
+        </div>
+        <div class="f-row">
+          <div class="f-field">
+            <div class="f-label"><span data-i18n="lblPrice">Eintritt</span> <span class="opt" data-i18n="optional">optional</span></div>
+            <input type="text" id="subPrice" data-i18n-ph="phPrice" placeholder="15.- oder FREE" maxlength="14">
+          </div>
+          <div class="f-field">
+            <div class="f-label"><span data-i18n="lblIg">Instagram</span> <span class="opt" data-i18n="optional">optional</span></div>
+            <input type="text" id="subIg" placeholder="@handle" maxlength="40">
+          </div>
+        </div>
+        <div class="f-field">
+          <div class="f-label"><span data-i18n="lblLink">Link</span> <span class="opt" data-i18n="optional">optional</span></div>
+          <input type="url" id="subLink" data-i18n-ph="phLink" placeholder="Instagram-Post, Ticketlink …" inputmode="url">
+        </div>
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblEmail">Kontakt-E-Mail</div>
+          <input type="email" id="subEmail" data-i18n-ph="phEmail" placeholder="Für Rückfragen — wird nicht publiziert" inputmode="email">
+          <div class="f-err" id="err-email" data-i18n="errEmail">Gültige E-Mail fehlt</div>
+        </div>
+        <button class="rsvp-btn" onclick="subGo(2)" data-i18n="next">Weiter</button>
+      </div>
+
+      <!-- Schritt 2: Bild + Ausschnitt -->
+      <div class="s-pane" id="spane-2">
+        <div class="f-field">
+          <div class="f-label" data-i18n="lblFlyer">Flyer-Foto</div>
+          <div class="f-flyer" id="flyerBox" onclick="$('flyerInput').click()">
+            <div class="fl-icon">＋</div>
+            <div class="fl-txt" data-i18n="flyerCta">Foto aufnehmen oder hochladen</div>
+          </div>
+          <input type="file" id="flyerInput" accept="image/*" style="display:none" onchange="flyerPicked(this)">
+          <div class="f-err" id="err-flyer" data-i18n="errFlyer">Flyer-Foto fehlt</div>
+        </div>
+        <div id="cropWrap" style="display:none">
+          <div class="crop-frame">
+            <div class="crop-box" id="cropBox"><img id="cropImg" alt=""></div>
+            <div class="cf-bottom"></div>
+          </div>
+          <div class="crop-tools">
+            <button onclick="cropStep(-1)">−</button>
+            <input type="range" id="cropRange" min="100" max="400" value="100" oninput="cropSetZoom(this.value/100)">
+            <button onclick="cropStep(1)">+</button>
+          </div>
+          <div class="f-hint" style="margin-top:10px" data-i18n="cropHint">Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.</div>
+          <button class="ghost" style="width:100%;margin-top:12px" onclick="$('flyerInput').click()" data-i18n="change">Ändern</button>
+        </div>
+        <div class="s-nav">
+          <button class="ghost" onclick="subGo(1)" data-i18n="back">Zurück</button>
+          <button class="rsvp-btn" onclick="subGo(3)" data-i18n="next">Weiter</button>
         </div>
       </div>
-      <div class="f-err" id="err-date" style="margin-top:-12px" data-i18n="errDate">Datum fehlt oder liegt in der Vergangenheit</div>
-      <div class="f-field">
-        <div class="f-label"><span data-i18n="lblLink">Link</span> <span class="opt" data-i18n="optional">optional</span></div>
-        <input type="url" id="subLink" data-i18n-ph="phLink" placeholder="Instagram-Post, Ticketlink …" inputmode="url">
+
+      <!-- Schritt 3: Vorschau -->
+      <div class="s-pane" id="spane-3">
+        <div class="prev-tabs">
+          <button class="on" id="ptab-list" onclick="setPrevTab('list')" data-i18n="prevList">Listenansicht</button>
+          <button id="ptab-full" onclick="setPrevTab('full')" data-i18n="prevFull">Vollbild</button>
+        </div>
+        <div class="prev-frame" id="prevBox"></div>
+        <div class="f-hint" data-i18n="prevHint">So erscheint dein Event bei uns. Passt der Ausschnitt nicht, geh zurück und verschieb ihn.</div>
+        <div class="s-nav">
+          <button class="ghost" onclick="subGo(2)" data-i18n="back">Zurück</button>
+          <button class="rsvp-btn" onclick="submitEvent()" data-i18n="submit">Einreichen</button>
+        </div>
+        <div class="f-hint" data-i18n="submitHint">Kein Auto-Publish: Live geht nur, was die 2BE-Kuratierung freigibt.
+          Prototyp — die Daten bleiben lokal auf deinem Gerät.</div>
       </div>
-      <div class="f-field">
-        <div class="f-label" data-i18n="lblEmail">Kontakt-E-Mail</div>
-        <input type="email" id="subEmail" data-i18n-ph="phEmail" placeholder="Für Rückfragen — wird nicht publiziert" inputmode="email">
-        <div class="f-err" id="err-email" data-i18n="errEmail">Gültige E-Mail fehlt</div>
-      </div>
-      <button class="rsvp-btn" onclick="submitEvent()" data-i18n="submit">Einreichen</button>
-      <div class="f-hint" data-i18n="submitHint">Kein Auto-Publish: Live geht nur, was die 2BE-Kuratierung freigibt.
-        Prototyp — die Daten bleiben lokal auf deinem Gerät.</div>
     </div>
     <div class="s-done" id="submitDone">
       <div class="s-check">✓</div>
@@ -530,6 +696,8 @@
     </button>
   </nav>
 
+  <div class="lightbox" id="lightbox" onclick="closeFlyer()"></div>
+
   <div class="toast" id="toast"></div>
 </div>
 
@@ -558,13 +726,25 @@ const I18N = {
     submitHint:"Kein Auto-Publish: Live geht nur, was die 2BE-Kuratierung freigibt. Prototyp — die Daten bleiben lokal auf deinem Gerät.",
     doneTitle:"Eingereicht", doneText:"Danke! Das Team schaut sich dein Event an und meldet sich per E-Mail, sobald es live ist.",
     doneAgain:"Weiteres Event einreichen", change:"Ändern",
+    stepInfos:"Infos", stepImage:"Bild", stepPreview:"Vorschau", next:"Weiter", back:"Zurück",
+    lblCat:"Kategorie", errCat:"Kategorie fehlt", lblArt:"Art", artEvent:"Einmaliges Event", artPopup:"Pop-up",
+    lblDateFrom:"Datum von", lblDateTo:"Datum bis", lblTimeFrom:"Zeit von", lblTimeTo:"Zeit bis",
+    lblLoc:"Location / Adresse", phLoc:"z.B. Käfigturm 43", errLoc:"Adresse fehlt",
+    lblZip:"PLZ & Ort", phZip:"z.B. 3011 Bern",
+    lblHost:"Veranstalter", phHost:"Wer steht dahinter?", errHost:"Veranstalter fehlt",
+    lblPrice:"Eintritt", phPrice:"15.- oder FREE", lblIg:"Instagram",
+    cropHint:"Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.",
+    prevList:"Listenansicht", prevFull:"Vollbild",
+    prevHint:"So erscheint dein Event bei uns. Passt der Ausschnitt nicht, geh zurück und verschieb ihn.",
+    errDateEnd:"Enddatum fehlt oder liegt vor dem Start",
+    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
     saTitle:"Plakatsäule", saSub:"Kuratierte Auswahl der Woche — drehen & entdecken",
     saHint:"Plakat antippen → Event · Tür → einreichen", doorSign:"GET LISTED", doorHint:"Tür öffnen · Event einreichen",
     emptyNothing:"Hier ist gerade nichts", emptyInCat:" in dieser Kategorie",
     emptyAdjust:"Kategorie oder Zeitraum anpassen.",
     upcoming:"(Meine) nächsten Events",
     emptySavedTitle:"Noch nichts gespeichert.", emptySavedText:"Markiere Events im Feed mit dem Lesezeichen.",
-    liveNow:"● Läuft jetzt gerade", like:"Gefällt mir", liked:"Gefällt dir",
+    lbHint:"Ganzes Bild · tippen zum Schliessen", liveNow:"● Läuft jetzt gerade", like:"Gefällt mir", liked:"Gefällt dir",
     secRunning:"Läuft gerade", secUpcoming:"Demnächst",
     lastDay:"Letzter Tag", leftDays:"Noch {n} Tage", leftWeeks:"Noch {n} Wochen", until:"Bis {d}",
     saved:"✓ Gespeichert", save:"Speichern", share:"Teilen", calendar:"+ Kalender",
@@ -594,13 +774,25 @@ const I18N = {
     submitHint:"No auto-publish: only what the 2BE curation approves goes live. Prototype — data stays local on your device.",
     doneTitle:"Submitted", doneText:"Thanks! The team will look at your event and reach out by email once it's live.",
     doneAgain:"Submit another event", change:"Change",
+    stepInfos:"Details", stepImage:"Image", stepPreview:"Preview", next:"Next", back:"Back",
+    lblCat:"Category", errCat:"Category missing", lblArt:"Type", artEvent:"One-off event", artPopup:"Pop-up",
+    lblDateFrom:"Date from", lblDateTo:"Date to", lblTimeFrom:"Time from", lblTimeTo:"Time to",
+    lblLoc:"Location / address", phLoc:"e.g. Käfigturm 43", errLoc:"Address missing",
+    lblZip:"Postcode & town", phZip:"e.g. 3011 Bern",
+    lblHost:"Host", phHost:"Who is behind it?", errHost:"Host missing",
+    lblPrice:"Entry", phPrice:"15.- or FREE", lblIg:"Instagram",
+    cropHint:"Move and zoom the image until the crop is right — it applies to both views. Keep titles, faces and logos near the centre.",
+    prevList:"List view", prevFull:"Full screen",
+    prevHint:"This is how your event will look. If the crop is off, go back and adjust it.",
+    errDateEnd:"End date missing or before the start",
+    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
     saTitle:"Poster column", saSub:"Curated pick of the week — spin & discover",
     saHint:"Tap a poster → event · Door → get listed", doorSign:"GET LISTED", doorHint:"Open the door · submit an event",
     emptyNothing:"Nothing here", emptyInCat:" in this category",
     emptyAdjust:"Adjust the category or the time range.",
     upcoming:"(My) Upcoming Events",
     emptySavedTitle:"Nothing saved yet.", emptySavedText:"Bookmark events in the feed to add them here.",
-    liveNow:"● Happening now", like:"Like", liked:"Liked",
+    lbHint:"Full image · tap to close", liveNow:"● Happening now", like:"Like", liked:"Liked",
     secRunning:"Happening now", secUpcoming:"Upcoming",
     lastDay:"Last day", leftDays:"{n} days left", leftWeeks:"{n} weeks left", until:"Until {d}",
     saved:"✓ Saved", save:"Save", share:"Share", calendar:"+ Calendar",
@@ -630,13 +822,25 @@ const I18N = {
     submitHint:"Pas de publication auto : seul ce que la curation 2BE valide passe en ligne. Prototype — les données restent locales sur ton appareil.",
     doneTitle:"Envoyé", doneText:"Merci ! L'équipe examine ton événement et te recontacte par e-mail dès qu'il est en ligne.",
     doneAgain:"Proposer un autre événement", change:"Modifier",
+    stepInfos:"Infos", stepImage:"Image", stepPreview:"Aperçu", next:"Suivant", back:"Retour",
+    lblCat:"Catégorie", errCat:"Catégorie manquante", lblArt:"Type", artEvent:"Événement unique", artPopup:"Pop-up",
+    lblDateFrom:"Date du", lblDateTo:"Date au", lblTimeFrom:"Heure de", lblTimeTo:"Heure à",
+    lblLoc:"Lieu / adresse", phLoc:"p.ex. Käfigturm 43", errLoc:"Adresse manquante",
+    lblZip:"NPA & localité", phZip:"p.ex. 3011 Bern",
+    lblHost:"Organisateur", phHost:"Qui est derrière ?", errHost:"Organisateur manquant",
+    lblPrice:"Entrée", phPrice:"15.- ou FREE", lblIg:"Instagram",
+    cropHint:"Déplace et zoome l'image jusqu'à ce que le cadrage soit bon — il vaut pour les deux vues. Garde titres, visages et logos vers le centre.",
+    prevList:"Vue liste", prevFull:"Plein écran",
+    prevHint:"Voilà comment ton événement apparaîtra. Si le cadrage ne va pas, reviens en arrière.",
+    errDateEnd:"Date de fin manquante ou avant le début",
+    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
     saTitle:"Colonne Morris", saSub:"Sélection de la semaine — fais tourner & découvre",
     saHint:"Touche une affiche → événement · Porte → proposer", doorSign:"GET LISTED", doorHint:"Ouvre la porte · propose un événement",
     emptyNothing:"Rien ici", emptyInCat:" dans cette catégorie",
     emptyAdjust:"Ajuste la catégorie ou la période.",
     upcoming:"(Mes) prochains événements",
     emptySavedTitle:"Rien d'enregistré pour l'instant.", emptySavedText:"Ajoute des événements avec le marque-page dans le feed.",
-    liveNow:"● En ce moment", like:"J'aime", liked:"Aimé",
+    lbHint:"Image entière · touche pour fermer", liveNow:"● En ce moment", like:"J'aime", liked:"Aimé",
     secRunning:"En ce moment", secUpcoming:"Prochainement",
     lastDay:"Dernier jour", leftDays:"Encore {n} jours", leftWeeks:"Encore {n} semaines", until:"Jusqu'au {d}",
     saved:"✓ Enregistré", save:"Enregistrer", share:"Partager", calendar:"+ Agenda",
@@ -903,6 +1107,8 @@ function setLang(l){
   applyStaticI18n();
   updateLangButtons();
   renderAll();
+  if($("catPick")) renderPicks();
+  if($("submit").classList.contains("open") && subStep===3) renderPreview();
   setSheet(state.sheet, false);
   if($("detail").classList.contains("open") && state.detailId) renderDetail(state.detailId);
   if(saReady) saRefresh();
@@ -1014,30 +1220,34 @@ function tickerItem(e){
   return `<span class="ticker-item" onclick="openDetail(${e.id})"><span class="tdot"></span>` +
          `LIVE — ${e.title} · ${e.addr1} · ${catLabel(e.tags[0])}</span>`;
 }
+const TICKER_BOXES = ["ticker","tickerSaved"];   // Kartenansicht und 2BE-Tab
 function renderTicker(){
   const live = EVENTS.filter(isLive);
-  const box = $("ticker");
   if(tickerTimer){ clearInterval(tickerTimer); tickerTimer = null; }
-  if(!live.length){ box.style.display="none"; box.innerHTML=""; return; }
-  box.style.display="block";
+  const boxes = TICKER_BOXES.map($).filter(Boolean);
+  if(!live.length){ boxes.forEach(b=>{ b.style.display="none"; b.innerHTML=""; }); return; }
   if(REDUCED_MOTION){
     // Kein Lauf: ein Eintrag steht, wechselt alle 4 s
-    box.innerHTML = `<div class="ticker-static" id="tickerStatic"></div>`;
+    boxes.forEach(b=>{ b.style.display="block"; b.innerHTML = `<div class="ticker-static"></div>`; });
     let i = 0;
-    const paint = () => { const el=$("tickerStatic"); if(!el) return; el.innerHTML = tickerItem(live[i%live.length]); i++; };
+    const paint = () => {
+      const html = tickerItem(live[i%live.length]); i++;
+      document.querySelectorAll(".ticker-static").forEach(el => el.innerHTML = html);
+    };
     paint();
     tickerTimer = setInterval(paint, 4000);
   } else {
     // Inhalt doppelt, damit die Schleife nahtlos umspringt (-50%)
     const items = live.map(tickerItem).join("");
-    box.innerHTML = `<div class="ticker-track">${items}${items}</div>`;
+    boxes.forEach(b=>{ b.style.display="block"; b.innerHTML = `<div class="ticker-track">${items}${items}</div>`; });
   }
 }
 function initTicker(){
-  const box = $("ticker");
-  box.addEventListener("pointerdown", ()=>box.classList.add("paused"));
-  ["pointerup","pointercancel","pointerleave"].forEach(ev =>
-    box.addEventListener(ev, ()=>box.classList.remove("paused")));
+  TICKER_BOXES.map($).filter(Boolean).forEach(box=>{
+    box.addEventListener("pointerdown", ()=>box.classList.add("paused"));
+    ["pointerup","pointercancel","pointerleave"].forEach(ev =>
+      box.addEventListener(ev, ()=>box.classList.remove("paused")));
+  });
 }
 
 function renderTimeline(){
@@ -1049,7 +1259,7 @@ function renderTimeline(){
   }
   const byDate = {};
   saved.forEach(e => (byDate[e.sort]=byDate[e.sort]||[]).push(e));
-  $("timeline").innerHTML = `<div class="tl-head">${t('upcoming')}</div>` +
+  $("timeline").innerHTML =
     Object.keys(byDate).sort().map(d=>{
       const evs = byDate[d];
       const dnum = d.slice(8,10)+"."+d.slice(5,7)+".";
@@ -1082,8 +1292,8 @@ function renderDetail(id){
   const liked = state.likes.has(e.id);
   const count = (LIKES[e.id]||0) + (liked?1:0);
   $("detail").innerHTML = `
-    <div class="d-imgwrap">
-      <button class="d-close" onclick="closeDetail()">✕</button>
+    <div class="d-imgwrap" onclick="openFlyer(${e.id})">
+      <button class="d-close" onclick="event.stopPropagation();closeDetail()">✕</button>
       <img src="${img(e,800)}" alt="">
       ${e.price?`<div class="price-tag" style="top:12px">${e.price}</div>`:""}
     </div>
@@ -1162,9 +1372,16 @@ function setRange(r){
 const sheet = ()=>$("sheet");
 function sheetY(s){
   const h = sheet().clientHeight;
-  // Voll: Liste gross, oben bleibt so viel Karte stehen, dass Band + Chips sichtbar sind
-  const topH = ($("mapTop") ? $("mapTop").offsetHeight : 0) + 14;
-  if(s==="list") return Math.max(110, topH);
+  // Voll: die Liste schiebt sich bis unter das Live-Band und deckt die Filter-Chips zu -
+  // so bleibt mehr vom Polaroid sichtbar. Zum Filtern zieht man das Sheet wieder runter.
+  if(s==="list"){
+    const f = $("filters"), v = $("view-find");
+    if(f && v){
+      const y = Math.round(f.getBoundingClientRect().top - v.getBoundingClientRect().top);
+      if(y > 20) return y;
+    }
+    return 110;
+  }
   if(s==="half") return Math.round(h*0.45);
   // Peek: Griff + Oberkante der ersten Card, Karte praktisch vollflaechig
   return h - Math.min(150, Math.max(110, Math.round(h*0.16)));
@@ -1284,67 +1501,259 @@ function share(id){
     navigator.clipboard.writeText(url); toast(t("toastShare"));
   }
 }
+// Der Zuschnitt zeigt nur den Ausschnitt — hier gibt es den Flyer einmal ganz zu sehen
+function openFlyer(id){
+  const e = EVENTS.find(x=>x.id===id); if(!e) return;
+  $("lightbox").innerHTML = `<img src="${img(e,1400)}" alt=""><div class="lb-hint">${t('lbHint')}</div>`;
+  $("lightbox").classList.add("open");
+}
+function closeFlyer(){ $("lightbox").classList.remove("open"); }
 function openDetail(id){ renderDetail(id); $("detail").classList.add("open"); }
 function closeDetail(){ destroyDetailMap(); $("detail").classList.remove("open"); syncSaved(); }
 
 // ================= Submit (Mock — schreibt später in die Supabase-Vetting-Queue) =================
-let flyerData = null;
-function openSubmit(){ $("submit").classList.add("open"); }
+// Drei Schritte: 1 Infos · 2 Bild samt Ausschnitt · 3 Vorschau in beiden Ansichten.
+// Der Einreicher soll VOR dem Absenden sehen, wie sein Event bei uns erscheint.
+let flyerData = null, subStep = 1, prevTab = "list";
+let subCat = null, subArt = "event";
+const crop = {box:0, w:0, h:0, ox:0, oy:0, z:1};
+
+function openSubmit(){ $("submit").classList.add("open"); renderPicks(); }
 function closeSubmit(){ $("submit").classList.remove("open"); }
-function flyerPicked(inp){
-  const f = inp.files && inp.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    flyerData = ev.target.result;
-    const box = $("flyerBox");
-    box.classList.add("has"); box.classList.remove("err");
-    box.innerHTML = `<img src="${flyerData}" alt="Flyer"><span class="fl-change">${t('change')}</span>`;
-    $("err-flyer").classList.remove("show");
-  };
-  r.readAsDataURL(f);
+
+function renderPicks(){
+  $("catPick").innerHTML = CATS.filter(c=>c.key!=="all").map(c =>
+    `<button class="chip plain ${subCat===c.key?'on':''}" onclick="pickCat('${c.key}')">${catLabel(c.key)}</button>`).join("");
+  $("artPick").innerHTML = [["event",t("artEvent")],["popup",t("artPopup")]].map(([k,l]) =>
+    `<button class="chip plain ${subArt===k?'on':''}" onclick="pickArt('${k}')">${l}</button>`).join("");
+  // Pop-ups brauchen ein Enddatum, einmalige Events nicht
+  $("dateToOpt").textContent = subArt==="popup" ? "" : t("optional");
+}
+function pickCat(k){ subCat = k; $("err-cat").classList.remove("show"); renderPicks(); }
+function pickArt(k){ subArt = k; renderPicks(); }
+
+// ---- Schrittsteuerung ----
+function subGo(n){
+  if(n > subStep && !subValidate(subStep)) return;
+  subStep = n;
+  [1,2,3].forEach(i => {
+    $("spane-"+i).classList.toggle("active", i===n);
+    $("sstep-"+i).classList.toggle("on", i<=n);
+  });
+  $("submit").scrollTop = 0;
+  if(n===3) renderPreview();
+}
+function subValidate(step){
+  let bad = false;
+  if(step===1){
+    const today = new Date().toISOString().slice(0,10);
+    const d = $("subDate").value, de = $("subDateEnd").value;
+    bad = markErr("subTitle", "err-title", !$("subTitle").value.trim()) || bad;
+    const noCat = !subCat; $("err-cat").classList.toggle("show", noCat); bad = noCat || bad;
+    bad = markErr("subDate", "err-date", !d || d < today) || bad;
+    if(subArt==="popup"){
+      const badEnd = !de || de < d;
+      $("err-date").textContent = badEnd ? t("errDateEnd") : t("errDate");
+      bad = markErr("subDateEnd", "err-date", badEnd) || bad;
+    }
+    bad = markErr("subAddr1", "err-addr",  !$("subAddr1").value.trim()) || bad;
+    bad = markErr("subHost",  "err-host",  !$("subHost").value.trim()) || bad;
+    bad = markErr("subEmail", "err-email", !/^\S+@\S+\.\S+$/.test($("subEmail").value.trim())) || bad;
+  }
+  if(step===2){
+    bad = markErr(null, "err-flyer", !flyerData) || bad;
+    $("flyerBox").classList.toggle("err", !flyerData);
+  }
+  return !bad;
 }
 function markErr(id, errId, bad){
   if(id) $(id).classList.toggle("err", bad);
   $(errId).classList.toggle("show", bad);
   return bad;
 }
+
+// ---- Bild und Ausschnitt ----
+function flyerPicked(inp){
+  const f = inp.files && inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    flyerData = ev.target.result;
+    $("flyerBox").style.display = "none";
+    $("cropWrap").style.display = "block";
+    $("err-flyer").classList.remove("show");
+    const im = $("cropImg");
+    im.onload = initCrop;
+    im.src = flyerData;
+  };
+  r.readAsDataURL(f);
+}
+function initCrop(){
+  const box = $("cropBox").clientWidth || 300;
+  const im = $("cropImg");
+  const ar = (im.naturalWidth || 1) / (im.naturalHeight || 1);
+  // Bild deckt das Quadrat bei Zoom 1 vollstaendig ab
+  crop.box = box;
+  if(ar >= 1){ crop.h = box; crop.w = box*ar; } else { crop.w = box; crop.h = box/ar; }
+  crop.ox = 0; crop.oy = 0; crop.z = 1;
+  $("cropRange").value = 100;
+  applyCrop();
+}
+function clampCrop(){
+  const mx = Math.max(0, (crop.w*crop.z - crop.box)/2);
+  const my = Math.max(0, (crop.h*crop.z - crop.box)/2);
+  crop.ox = Math.max(-mx, Math.min(mx, crop.ox));
+  crop.oy = Math.max(-my, Math.min(my, crop.oy));
+}
+// Denselben Ausschnitt auf ein beliebig grosses quadratisches Feld uebertragen
+function applyCropTo(imgEl, boxPx){
+  if(!crop.box) return;
+  const k = boxPx / crop.box;
+  imgEl.style.width  = (crop.w*k) + "px";
+  imgEl.style.height = (crop.h*k) + "px";
+  imgEl.style.transform = `translate(-50%,-50%) translate(${crop.ox*k}px,${crop.oy*k}px) scale(${crop.z})`;
+}
+function applyCrop(){ clampCrop(); applyCropTo($("cropImg"), crop.box); }
+function cropSetZoom(z){ crop.z = Math.max(1, Math.min(4, z)); applyCrop(); }
+function cropStep(dir){ cropSetZoom(crop.z + dir*0.25); $("cropRange").value = Math.round(crop.z*100); }
+function initCropInput(){
+  const el = $("cropBox"); if(!el) return;
+  const pts = new Map(); let lastD = 0;
+  const dist = () => { const p=[...pts.values()]; return p.length<2?0:Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y); };
+  el.addEventListener("pointerdown", e => {
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    if(pts.size===2) lastD = dist();
+  });
+  el.addEventListener("pointermove", e => {
+    if(!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId);
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pts.size >= 2){
+      const d = dist();
+      if(lastD && d){ crop.z = Math.max(1, Math.min(4, crop.z*(d/lastD))); $("cropRange").value = Math.round(crop.z*100); }
+      lastD = d; applyCrop(); return;
+    }
+    crop.ox += e.clientX - prev.x;
+    crop.oy += e.clientY - prev.y;
+    applyCrop();
+  });
+  const up = e => { pts.delete(e.pointerId); if(pts.size < 2) lastD = 0; };
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+  el.addEventListener("wheel", e => {
+    e.preventDefault();
+    crop.z = Math.max(1, Math.min(4, crop.z - e.deltaY*0.002));
+    $("cropRange").value = Math.round(crop.z*100);
+    applyCrop();
+  }, {passive:false});
+}
+
+// ---- Vorschau ----
+function subValues(){
+  const d = $("subDate").value, de = $("subDateEnd").value;
+  const parse = v => { if(!v) return null; const [y,m,dd] = v.split("-").map(Number); return new Date(y, m-1, dd); };
+  const from = parse(d), to = parse(de);
+  const tf = $("subTime").value, tt = $("subTimeEnd").value;
+  return {
+    title: $("subTitle").value.trim() || "—",
+    host:  $("subHost").value.trim()  || "—",
+    cat:   subCat || "other", art: subArt,
+    dateLabel: from ? DATEFMT[LANG](from) : "—",
+    rangeLabel: (from ? DATEFMT[LANG](from) : "—") + (to ? " – " + DATEFMT[LANG](to) : ""),
+    day:   from ? DAYS[LANG][from.getDay()] : "",
+    time:  tf ? (tf + (tt ? " – " + tt : "")) : "",
+    addr1: $("subAddr1").value.trim() || "—",
+    addr2: $("subAddr2").value.trim() || "",
+    price: $("subPrice").value.trim(),
+    ig:    $("subIg").value.trim(),
+    link:  $("subLink").value.trim(),
+    email: $("subEmail").value.trim()
+  };
+}
+function setPrevTab(w){
+  prevTab = w;
+  $("ptab-list").classList.toggle("on", w==="list");
+  $("ptab-full").classList.toggle("on", w==="full");
+  renderPreview();
+}
+function renderPreview(){
+  const d = subValues();
+  const color = CATCOLORS[d.cat] || CATCOLORS.other;
+  const box = $("prevBox");
+  box.innerHTML = (prevTab === "list") ? `
+    <article class="pol">
+      <div class="prev-img">
+        <img src="${flyerData||""}" alt="">
+        ${d.price?`<div class="price-tag">${d.price}</div>`:""}
+      </div>
+      <div class="pol-cap">
+        <div class="pol-t"><span class="cat-dot" style="background:${color}"></span>${d.title}</div>
+        <div class="pol-m">${d.dateLabel} · ${d.addr1}</div>
+      </div>
+    </article>` : `
+    <div class="prev-full">
+      <div class="prev-img">
+        <img src="${flyerData||""}" alt="">
+        ${d.price?`<div class="price-tag" style="top:12px">${d.price}</div>`:""}
+      </div>
+      <div class="d-body">
+        <div>
+          <div class="d-title">${d.title}</div>
+          <div class="d-sub">${d.host}</div>
+        </div>
+        <div class="d-grid">
+          <div class="meta">${d.art==="popup" ? d.rangeLabel : (d.day+"<br>"+d.dateLabel)}${d.time?`<br><span class="light">${d.time}</span>`:""}</div>
+          <div class="meta right">${d.addr1}${d.addr2?"<br>"+d.addr2:""}</div>
+        </div>
+        <div class="d-tags"><span class="d-tag">${catLabel(d.cat)}</span>${d.art==="popup"?`<span class="d-tag">${t("artPopup")}</span>`:""}</div>
+        <div class="like-row prev-inert"><button class="like-btn">${heartSvg}<span>0</span></button></div>
+        <div class="d-actions prev-inert">
+          <button class="primary">${t("save")}</button>
+          <button>${t("share")}</button>
+        </div>
+      </div>
+    </div>`;
+  const cont = box.querySelector(".prev-img");
+  const im = cont && cont.querySelector("img");
+  if(cont && im){
+    const go = () => applyCropTo(im, cont.clientWidth);
+    if(im.complete) go(); else im.onload = go;
+  }
+}
+
+// ---- Absenden ----
 function submitEvent(){
-  const title = $("subTitle").value.trim();
-  const date  = $("subDate").value;
-  const email = $("subEmail").value.trim();
-  const today = new Date().toISOString().slice(0,10);
-  let bad = false;
-  bad = markErr(null, "err-flyer", !flyerData) || bad;
-  if(!flyerData) $("flyerBox").classList.add("err");
-  bad = markErr("subTitle", "err-title", !title) || bad;
-  bad = markErr("subDate",  "err-date",  !date || date < today) || bad;
-  bad = markErr("subEmail", "err-email", !/^\S+@\S+\.\S+$/.test(email)) || bad;
-  if(bad) return;
+  if(!subValidate(1)){ subGo(1); return; }
+  if(!subValidate(2)){ subGo(2); return; }
+  const d = subValues();
   // Prototyp: lokal ablegen — später INSERT in Supabase-Tabelle `submissions` (Status: pending)
   try{
     const subs = JSON.parse(localStorage.getItem("2be_submissions")||"[]");
-    subs.push({title, date, time:$("subTime").value||null, link:$("subLink").value.trim()||null,
-      email, ts:new Date().toISOString()});
+    subs.push({...d, crop:{ox:crop.ox/crop.box, oy:crop.oy/crop.box, z:crop.z}, ts:new Date().toISOString()});
     localStorage.setItem("2be_submissions", JSON.stringify(subs));
   }catch(e){}
   $("submitForm").style.display = "none";
   $("submitDone").classList.add("show");
 }
 function resetSubmit(){
-  flyerData = null;
+  flyerData = null; subCat = null; subArt = "event"; prevTab = "list";
   $("flyerInput").value = "";
-  $("flyerBox").classList.remove("has","err");
-  $("flyerBox").innerHTML = `<div class="fl-icon">＋</div><div class="fl-txt">${t('flyerCta')}</div>`;
-  ["subTitle","subDate","subTime","subLink","subEmail"].forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
+  $("flyerBox").style.display = "flex";
+  $("flyerBox").classList.remove("err");
+  $("cropWrap").style.display = "none";
+  ["subTitle","subDate","subDateEnd","subTime","subTimeEnd","subAddr1","subAddr2",
+   "subHost","subPrice","subIg","subLink","subEmail"].forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
   document.querySelectorAll(".f-err").forEach(e=>e.classList.remove("show"));
   $("submitDone").classList.remove("show");
   $("submitForm").style.display = "flex";
+  renderPicks(); setPrevTab("list"); subGo(1);
 }
 
 // ================= Plakatsäule (3D — three.js Colonne Morris) =================
 const THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
 let saOpen=false, saReady=false, saRaf=null;
 let saScene, saCam, saRenderer, saGroup, saPosters=[], saActions=[];
+let saHost = null;   // Element, in dem die Saeule gerade steckt (Overlay oder 2BE-Tab)
 let saVel=0.0012, saDragging=false, saMoved=false, saLastX=0, saDownX=0, saDownY=0;
 let saCamDist=12.5, saTargetY=3.0;
 let saPtrs=new Map(), saPinchD=0, saLastTouch=-1e6;
@@ -1525,7 +1934,7 @@ function saBuild(){
   saRenderer=new T.WebGLRenderer({antialias:true,alpha:true});
   saRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
   saRenderer.toneMapping=T.ACESFilmicToneMapping; saRenderer.toneMappingExposure=1.12;
-  $("saScene").appendChild(saRenderer.domElement);
+  (saHost || $("saScene")).appendChild(saRenderer.domElement);
   saScene.add(new T.HemisphereLight(0xffffff,0x2a2438,0.6));
   saScene.add(new T.AmbientLight(0xffffff,0.25));
   const key=new T.DirectionalLight(0xfff2e0,1.1); key.position.set(6,11,8); saScene.add(key);
@@ -1552,7 +1961,8 @@ function saTick(ts){
 }
 function saResize(){
   if(!saRenderer) return;
-  const host=$("saScene"), w=host.clientWidth, h=host.clientHeight;
+  const host = saHost || $("saScene"); if(!host) return;
+  const w=host.clientWidth, h=host.clientHeight;
   if(!w||!h) return;
   saRenderer.setSize(w,h,false); saCam.aspect=w/h; saCam.updateProjectionMatrix();
 }
@@ -1611,28 +2021,58 @@ function loadThree(cb){
   s.onerror=()=>toast("3D konnte nicht geladen werden");
   document.head.appendChild(s);
 }
-function openSaeule(){
-  $("saeule").classList.add("open");
-  saOpen=true;
+// Die Saeule ist dasselbe 3D-Modell — sie zieht nur zwischen Overlay und 2BE-Tab um.
+function saMount(el){
+  if(!saRenderer || !el) return;
+  saHost = el;
+  if(saRenderer.domElement.parentElement !== el) el.appendChild(saRenderer.domElement);
+  saResize();
+}
+function saOpenIn(host){
+  saOpen = true;
+  saHost = host;
   loadThree(()=>{
     if(!saOpen) return;
-    if(!saReady) saBuild(); else { saResize(); saRefresh(); }
+    if(!saReady) saBuild(); else { saMount(host); saRefresh(); }
     if(!saRaf) saTick();
   });
 }
-function closeSaeule(){
-  saOpen=false;
+function saStop(){
+  saOpen = false;
   if(saRaf){ cancelAnimationFrame(saRaf); saRaf=null; }
+}
+function openSaeule(){
+  $("saeule").classList.add("open");
+  saOpenIn($("saScene"));
+}
+function closeSaeule(){
   $("saeule").classList.remove("open");
+  // Steht der Nutzer im 2BE-Tab auf Editor's Choice, laeuft die Saeule dort weiter
+  if(state.view==="saved" && savedTab==="editors") saOpenIn($("saSceneTab"));
+  else saStop();
+}
+
+let savedTab = "lineup";   // beim Oeffnen des 2BE-Tabs steht My Line Up vorne
+function setSavedTab(w){
+  savedTab = w;
+  $("tab-lineup").classList.toggle("on",  w==="lineup");
+  $("tab-editors").classList.toggle("on", w==="editors");
+  $("pane-lineup").classList.toggle("active",  w==="lineup");
+  $("pane-editors").classList.toggle("active", w==="editors");
+  if(w==="editors") setTimeout(()=>saOpenIn($("saSceneTab")), 30);
+  else if(!$("saeule").classList.contains("open")) saStop();
 }
 
 function show(v){
-  state.view=v; closeDetail(); closeSubmit(); closeSaeule(); closeDatePop();
+  state.view=v; closeDetail(); closeSubmit(); closeDatePop(); closeFlyer();
+  $("saeule").classList.remove("open");
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
   $("view-"+v).classList.add("active");
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
   $("nav-"+v).classList.add("active");
   if(v==="find") setTimeout(()=>map.invalidateSize(),50);
+  if(v==="saved" && savedTab==="editors") setTimeout(()=>saOpenIn($("saSceneTab")), 60);
+  else if(v!=="saved") saStop();
 }
 
 // ================= Init =================
@@ -1644,6 +2084,7 @@ initTheme();
 initLang();
 initSheet();
 initTicker();
+initCropInput();
 setSheet("map", false);   // Start: volle Kartenansicht (v10)
 locateUser();
 renderAll();
