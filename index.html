@@ -11,7 +11,10 @@
      FIND ueber den Verlauf in .map-head, die anderen ueber .safe-top in Akzentviolett. -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="2BE">
-<meta name="theme-color" content="#ffffff" id="themeColor">
+<!-- Fest dunkel: im Safari toent das den Streifen ueber der Seite, damit er in den
+     Verlauf unter dem Logo uebergeht statt als weisser Block zu stehen. In der
+     Homescreen-App greift stattdessen black-translucent, dort spielt es keine Rolle. -->
+<meta name="theme-color" content="#141416" id="themeColor">
 <title>2BE — Prototyp v10</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -60,7 +63,7 @@
      Systemschrift auf der hellen Tageskarte unlesbar. */
   .map-head{
     display:flex;align-items:center;justify-content:space-between;pointer-events:auto;
-    padding:calc(env(safe-area-inset-top, 0px) + 7px) 16px 14px;
+    padding:calc(env(safe-area-inset-top, 0px) + 6px) 16px 11px;
     background:linear-gradient(180deg,rgba(0,0,0,.60) 0%,rgba(0,0,0,.40) 55%,rgba(0,0,0,0) 100%);
   }
   .logo{font-weight:800;font-size:20px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;
@@ -78,12 +81,22 @@
   #view-find{overflow:hidden;position:relative}
   /* map als Vollfläche im Hintergrund */
   #map{position:absolute;inset:0;background:var(--bg);z-index:1}
+  /* Der zurückhaltende Grauton der Karte kommt aus dem Filter, nicht vom Kachelanbieter.
+     Nacht = invertiert und zurückgedreht, damit Grün Grün bleibt statt Magenta zu werden. */
+  .leaflet-tile-pane{filter:saturate(.22) contrast(.94) brightness(1.03)}
+  html[data-theme="dark"] .leaflet-tile-pane{
+    filter:invert(1) hue-rotate(180deg) saturate(.18) brightness(.82) contrast(1.06)}
+  /* OpenStreetMap verlangt eine Namensnennung — klein, aber sie muss da sein */
+  /* sitzt knapp ueber dem Sheet in der Peek-Position, sonst waere es sofort verdeckt */
+  .osm-credit{position:absolute;left:10px;bottom:150px;z-index:2;font-size:9px;letter-spacing:.2px;
+    color:var(--faint);background:var(--faded);padding:2px 6px;border-radius:999px;
+    text-decoration:none;pointer-events:auto}
   /* Overlay am oberen Kartenrand: Live-Band + Filter-Chips (v10) */
   .map-top{position:absolute;top:0;left:0;right:0;z-index:600;pointer-events:none}
   .map-top > *{pointer-events:auto}
   /* Live-Laufband — News-Ticker (v10, ersetzt die alte Live-Leiste im Sheet) */
   .ticker{background:var(--accent);color:#fff;overflow:hidden;white-space:nowrap;
-    padding:6px 0;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    padding:5px 0;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
     box-shadow:0 2px 10px rgba(0,0,0,.18)}
   .ticker-track{display:inline-block;white-space:nowrap;will-change:transform;
     animation:tickerRun 34s linear infinite}
@@ -127,7 +140,7 @@
     border:1.5px solid var(--fg);font-size:10px;font-weight:800;padding:3px 7px;letter-spacing:.5px;
     border-radius:0 999px 999px 0}
   #sheet.s-half .sheet-body{padding-bottom:45%}
-  #sheet.s-list .sheet-body{padding-bottom:130px}
+  #sheet.s-list .sheet-body{padding-bottom:118px}
   #sheet.s-map .sheet-body{padding-bottom:0}
   /* Datum-Filter: Pill in der Chip-Zeile, Popover haengt an .map-top —
      NICHT in .filters, denn dessen overflow-x:auto wuerde es abschneiden. */
@@ -207,7 +220,7 @@
   #detail.open{display:flex}
   .d-imgwrap{position:relative;flex:none}
   .d-imgwrap img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
-  .d-close{position:absolute;top:12px;left:12px;background:var(--bg);border:2px solid var(--fg);
+  .d-close{position:absolute;top:calc(env(safe-area-inset-top, 0px) + 12px);left:12px;background:var(--bg);border:2px solid var(--fg);
     color:var(--fg);width:36px;height:36px;font-size:18px;font-weight:800;cursor:pointer;z-index:5;
     font-family:inherit;border-radius:50%}
   .d-body{padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
@@ -299,7 +312,8 @@
   #submit{position:absolute;inset:0;background:var(--bg);z-index:900;display:none;
     flex-direction:column;overflow-y:auto}
   #submit.open{display:flex}
-  .s-head{flex:none;display:flex;align-items:center;gap:14px;padding:14px 16px;
+  .s-head{flex:none;display:flex;align-items:center;gap:14px;
+    padding:calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px;
     border-bottom:2px solid var(--fg)}
   .s-head .d-close{position:static}
   .s-htitle{font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
@@ -391,7 +405,8 @@
   html[data-theme="dark"] #saeule, html[data-theme="dark"] #pane-editors{
     background:linear-gradient(180deg,#04060C 0%,#0B1020 50%,#141a2a 75%,#241d10 100%)}
   #saeule.open{display:flex}
-  .sa-top{flex:none;display:flex;align-items:center;gap:14px;padding:14px 16px;z-index:5}
+  .sa-top{flex:none;display:flex;align-items:center;gap:14px;z-index:5;
+    padding:calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px}
   .sa-close{background:var(--bg);border:2px solid var(--fg);color:var(--fg);width:36px;height:36px;
     font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;border-radius:50%}
   .sa-htitle{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--fg)}
@@ -410,21 +425,31 @@
   /* nav */
   /* Wichtig: die Höhe MUSS die Home-Indikator-Zone zusätzlich enthalten, sonst
      frisst das padding-bottom die 64px auf und die Beschriftung wird abgeschnitten. */
-  nav{flex:none;display:flex;border-top:2px solid var(--fg);background:var(--bg);z-index:20;
-    min-height:calc(62px + env(safe-area-inset-bottom, 0px));
+  /* Flach, durchscheinend, aktiver Tab als violette Pille (v13) */
+  nav{flex:none;display:flex;z-index:20;border-top:1px solid var(--hair);
+    background:var(--faded);-webkit-backdrop-filter:saturate(1.5) blur(20px);
+    backdrop-filter:saturate(1.5) blur(20px);
+    min-height:calc(50px + env(safe-area-inset-bottom, 0px));
     padding-bottom:env(safe-area-inset-bottom, 0px)}
   nav button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:4px;padding:8px 0;font-size:10px;font-weight:700;
-    line-height:1.1;letter-spacing:1px;color:var(--faint);text-transform:uppercase;font-family:inherit}
-  nav button svg{width:24px;height:24px;stroke:var(--faint);fill:none;stroke-width:2;transition:stroke .45s}
-  nav button.active{color:var(--fg)}
-  nav button.active svg{stroke:var(--fg)}
-  nav button .badge{position:relative}
-  nav button .count{position:absolute;top:-4px;right:-10px;background:var(--accent);color:#fff;
+    align-items:center;justify-content:center;gap:2px;padding:5px 0 4px;font-size:8.5px;font-weight:800;
+    line-height:1.1;letter-spacing:.9px;color:var(--faint);text-transform:uppercase;font-family:inherit;
+    transition:color .25s}
+  .nav-ico{position:relative;width:52px;height:26px;border-radius:999px;display:flex;
+    align-items:center;justify-content:center;transition:background .28s cubic-bezier(.22,1,.36,1)}
+  nav button svg{width:21px;height:21px;stroke:var(--faint);fill:none;stroke-width:2;
+    transition:stroke .25s}
+  nav button.active{color:var(--accent)}
+  nav button.active svg{stroke:var(--accent)}
+  nav button.active .nav-ico{background:rgba(125,57,235,.16)}
+  html[data-theme="dark"] nav button.active .nav-ico{background:rgba(125,57,235,.30)}
+  nav button .count{position:absolute;top:-2px;right:4px;background:var(--accent);color:#fff;
     font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;
-    display:flex;align-items:center;justify-content:center;padding:0 3px}
+    display:flex;align-items:center;justify-content:center;padding:0 3px;
+    border:1.5px solid var(--bg)}
   .lightbox{position:absolute;inset:0;z-index:960;background:rgba(0,0,0,.94);display:none;
-    align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:26px 18px}
+    align-items:center;justify-content:center;flex-direction:column;gap:18px;
+    padding:calc(env(safe-area-inset-top, 0px) + 26px) 18px 26px}
   .lightbox.open{display:flex}
   .lightbox img{max-width:100%;max-height:82%;object-fit:contain;display:block}
   .lightbox .lb-hint{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
@@ -445,6 +470,7 @@
   <!-- FIND -->
   <div class="view active" id="view-find">
     <div id="map"></div>
+    <a class="osm-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
     <!-- Overlay am oberen Kartenrand: Live-Band, darunter die Filter-Chips (Datum-Pill vorne) -->
     <div class="map-top" id="mapTop">
       <div class="map-head">
@@ -683,15 +709,15 @@
 
   <nav>
     <button id="nav-find" class="active" onclick="show('find')">
-      <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
       <span data-i18n="navFind">find</span>
     </button>
     <button id="nav-saved" onclick="show('saved')">
-      <span class="badge"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg><span class="count" id="savedCount" style="display:none">0</span></span>
-      2be
+      <span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg><span class="count" id="savedCount" style="display:none">0</span></span>
+      <span>2be</span>
     </button>
     <button id="nav-profile" onclick="show('profile')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+      <span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span>
       <span data-i18n="navProfile">profile</span>
     </button>
   </nav>
@@ -1060,8 +1086,12 @@ function locateUser(){
 }
 
 // ================= Theme =================
-const TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-const TILE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+// Carto verlangt seit neuestem einen API-Schluessel und legt sonst «API KEY REQUIRED»
+// ueber jede Kachel. OpenStreetMap braucht keinen. Der editorial-graue Look kommt
+// stattdessen aus einem CSS-Filter auf der Kachel-Ebene (siehe .leaflet-tile-pane).
+// Wechsel auf einen anderen Anbieter: nur diese zwei Zeilen anfassen.
+const TILE_LIGHT = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_DARK  = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 function currentTheme(){ return document.documentElement.dataset.theme || "light"; }
 
@@ -1072,7 +1102,7 @@ if(!["light","dark"].includes(themeMode)) themeMode = "light";
 function applyTheme(){
   const t = themeMode;
   document.documentElement.dataset.theme = t;
-  $("themeColor").setAttribute("content", t==="dark" ? "#1c1c1e" : "#FDFCF8");
+  // theme-color bleibt bewusst dunkel — siehe Kommentar im <head>
   ["light","dark"].forEach(m => $("tm-"+m).classList.toggle("on", themeMode===m));
   if(map){
     if(tiles) tiles.remove();
@@ -1242,6 +1272,34 @@ function renderTicker(){
     boxes.forEach(b=>{ b.style.display="block"; b.innerHTML = `<div class="ticker-track">${items}${items}</div>`; });
   }
 }
+// Zurueck-Wischen vom linken Rand. In der Homescreen-App gibt es keine Browser-Geste mehr,
+// also bringen wir eine eigene mit: sie raeumt von oben nach unten ab, was offen ist.
+function goBack(){
+  if($("lightbox").classList.contains("open")) return closeFlyer();
+  if($("submit").classList.contains("open"))   return closeSubmit();
+  if($("saeule").classList.contains("open"))   return closeSaeule();
+  if($("detail").classList.contains("open"))   return closeDetail();
+  if($("datePop").classList.contains("open"))  return closeDatePop();
+  if(state.view !== "find")   return show("find");
+  if(state.sheet !== "map")   return setSheet("map");
+}
+function initEdgeBack(){
+  let sx = 0, sy = 0, t0 = 0, tracking = false;
+  document.addEventListener("touchstart", e => {
+    if(e.touches.length !== 1){ tracking = false; return; }
+    const p = e.touches[0];
+    tracking = p.clientX < 26;          // nur die aeusseren 26 px zaehlen
+    sx = p.clientX; sy = p.clientY; t0 = performance.now();
+  }, {passive:true});
+  document.addEventListener("touchend", e => {
+    if(!tracking) return;
+    tracking = false;
+    const p = e.changedTouches[0];
+    const dx = p.clientX - sx, dy = Math.abs(p.clientY - sy);
+    if(dx > 70 && dy < 60 && (performance.now() - t0) < 700) goBack();
+  }, {passive:true});
+}
+
 function initTicker(){
   TICKER_BOXES.map($).filter(Boolean).forEach(box=>{
     box.addEventListener("pointerdown", ()=>box.classList.add("paused"));
@@ -1295,7 +1353,7 @@ function renderDetail(id){
     <div class="d-imgwrap" onclick="openFlyer(${e.id})">
       <button class="d-close" onclick="event.stopPropagation();closeDetail()">✕</button>
       <img src="${img(e,800)}" alt="">
-      ${e.price?`<div class="price-tag" style="top:12px">${e.price}</div>`:""}
+      ${e.price?`<div class="price-tag" style="top:calc(env(safe-area-inset-top, 0px) + 12px)">${e.price}</div>`:""}
     </div>
     ${isLive(e)?`<div class="d-livebar">${t('liveNow')}</div>`:""}
     <div class="d-body">
@@ -2084,6 +2142,7 @@ initTheme();
 initLang();
 initSheet();
 initTicker();
+initEdgeBack();
 initCropInput();
 setSheet("map", false);   // Start: volle Kartenansicht (v10)
 locateUser();
