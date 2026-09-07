@@ -12,7 +12,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="2BE">
 <meta name="theme-color" content="#ffffff" id="themeColor">
-<title>2BE — Prototyp v9.1</title>
+<title>2BE — Prototyp v10</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root{
@@ -57,7 +60,8 @@
     padding:0 16px;padding-top:env(safe-area-inset-top);
     border-bottom:2px solid var(--fg);background:var(--bg);z-index:20;
   }
-  .logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
+  .logo{font-weight:800;font-size:22px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+  .logo-sa{height:26px;width:auto;fill:var(--fg);flex:none}
   .logo span{background:var(--accent);padding:0 4px;color:#fff}
   .h-right{display:flex;align-items:center;gap:14px}
   .city{font-size:12px;font-weight:700;letter-spacing:1px}
@@ -66,6 +70,7 @@
   @media (max-width:520px){
     header{min-height:42px;padding:0 14px;padding-top:env(safe-area-inset-top, 0px)}
     .logo{font-size:19px}
+    .logo-sa{height:22px}
     .city{font-size:11px}
   }
   .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
@@ -73,7 +78,21 @@
   #view-find{overflow:hidden;position:relative}
   /* map als Vollfläche im Hintergrund */
   #map{position:absolute;inset:0;background:var(--bg);z-index:1}
-  .map-btns{position:absolute;top:10px;right:10px;z-index:600;display:flex;gap:8px}
+  /* Overlay am oberen Kartenrand: Live-Band + Filter-Chips (v10) */
+  .map-top{position:absolute;top:0;left:0;right:0;z-index:600;pointer-events:none}
+  .map-top > *{pointer-events:auto}
+  /* Live-Laufband — News-Ticker (v10, ersetzt die alte Live-Leiste im Sheet) */
+  .ticker{background:var(--accent);color:#fff;overflow:hidden;white-space:nowrap;
+    padding:6px 0;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    box-shadow:0 2px 10px rgba(0,0,0,.18)}
+  .ticker-track{display:inline-block;white-space:nowrap;will-change:transform;
+    animation:tickerRun 34s linear infinite}
+  .ticker.paused .ticker-track{animation-play-state:paused}
+  .ticker-item{display:inline-block;padding:0 20px;cursor:pointer}
+  .ticker-static{padding:0 16px}
+  .tdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;
+    margin-right:7px;vertical-align:middle}
+  @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   /* Bottom Sheet mit Event-Liste */
   #sheet{
     position:absolute;left:0;right:0;top:0;height:100%;z-index:700;
@@ -88,20 +107,6 @@
   .grabber{width:44px;height:5px;border-radius:3px;background:var(--hair)}
   .handle-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
   .sheet-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-  /* LIVE-Leiste (kompakt, dezent) */
-  .live-row{display:flex;gap:8px;padding:8px 16px 0;overflow-x:auto;flex:none;
-    scrollbar-width:none;align-items:center}
-  .live-row::-webkit-scrollbar{display:none}
-  .live-head{flex:none}
-  .live-head span{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--accent)}
-  .live-head .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);
-    margin-right:4px;vertical-align:middle;animation:livePulse 1.8s infinite}
-  .live-item{flex:none;display:flex;align-items:center;gap:6px;cursor:pointer;
-    border:1px solid var(--hair);padding:3px 9px 3px 4px;border-radius:14px}
-  .live-thumb{width:20px;height:20px;border-radius:50%;object-fit:cover;display:block;
-    filter:grayscale(20%) contrast(1.05)}
-  .live-label{font-size:9.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;color:var(--muted)}
   @keyframes livePulse{
     0%{box-shadow:0 0 0 0 rgba(125,57,235,.45)}
     70%{box-shadow:0 0 0 9px rgba(125,57,235,0)}
@@ -109,6 +114,8 @@
   }
   /* Map-Pins — kompakt */
   .pin{width:14px;height:14px;border-radius:50%;border:2px solid var(--fg);box-sizing:border-box}
+  /* Pop-up-Orte sind abgerundete Quadrate, einmalige Events bleiben Kreise (v10) */
+  .pin.popup{border-radius:4px}
   .pin.live{width:18px;height:18px;background:var(--accent);border-color:var(--bg);
     animation:livePulse 1.6s infinite}
   /* Cluster-Bubble: fasst nahe Events zusammen, wenn weit rausgezoomt */
@@ -116,20 +123,16 @@
     border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;
     font-size:11px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
   /* Countdown-Badge */
-  .soon-tag{position:absolute;top:52px;left:0;background:var(--bg);color:var(--fg);
+  .soon-tag{position:absolute;top:10px;left:0;background:var(--bg);color:var(--fg);
     border:1.5px solid var(--fg);font-size:10px;font-weight:800;padding:3px 7px;letter-spacing:.5px;
     border-radius:0 999px 999px 0}
   #sheet.s-half .sheet-body{padding-bottom:45%}
   #sheet.s-list .sheet-body{padding-bottom:130px}
-  .mbtn{
-    background:var(--bg);border:2px solid var(--fg);color:var(--fg);font-weight:800;font-size:12px;
-    letter-spacing:1px;padding:8px 14px;cursor:pointer;font-family:inherit;border-radius:999px;
-  }
-  .mbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  /* Datum-Filter: Button + Auswahl-Popover */
-  .dfilter{position:relative}
+  #sheet.s-map .sheet-body{padding-bottom:0}
+  /* Datum-Filter: Pill in der Chip-Zeile + Auswahl-Popover */
+  .dfilter{position:relative;flex:none}
   .datepop{
-    position:absolute;top:calc(100% + 6px);right:0;min-width:168px;z-index:20;
+    position:absolute;top:calc(100% + 6px);left:0;min-width:168px;z-index:20;
     background:var(--bg);border:2px solid var(--fg);border-radius:16px;overflow:hidden;display:none;
     box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
@@ -141,40 +144,57 @@
   }
   .datepop button + button{border-top:1px solid var(--hair)}
   .datepop button.on{background:var(--accent);color:#fff}
-  /* filters */
+  /* filters — liegen seit v10 auf der Karte, nicht mehr im Sheet */
   .filters{
-    display:flex;gap:8px;padding:12px 16px;overflow-x:auto;flex:none;
-    scrollbar-width:none;border-bottom:1px solid var(--hair);background:var(--bg);
+    display:flex;gap:8px;padding:10px 14px;overflow-x:auto;flex:none;
+    scrollbar-width:none;background:transparent;
   }
   .filters::-webkit-scrollbar{display:none}
   .chip{
     flex:none;border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
     font-weight:700;letter-spacing:.5px;padding:7px 14px;cursor:pointer;
     text-transform:uppercase;font-family:inherit;border-radius:999px;
+    box-shadow:0 2px 8px rgba(0,0,0,.16);
   }
   .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  /* cards */
-  .feed{padding:14px;display:flex;flex-direction:column;gap:14px}
-  .card{position:relative;aspect-ratio:4/3;overflow:hidden;background:#8a8a8a;cursor:pointer;
-    border-radius:16px}
-  .card img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
-  html[data-theme="dark"] .card img{filter:grayscale(20%) contrast(1.05) brightness(.92)}
+  /* Standortpunkt des Nutzers */
+  .userdot{width:14px;height:14px;border-radius:50%;background:#2F80FF;border:2.5px solid #fff;
+    box-shadow:0 0 0 4px rgba(47,128,255,.22),0 1px 4px rgba(0,0,0,.35)}
+  /* cards — Polaroid-Stil (v10), eine Spalte */
+  .feed{padding:16px 18px 14px;display:flex;flex-direction:column;gap:20px}
+  /* Der Polaroid-Rahmen ist in BEIDEN Themes hell — im Nachtmodus ein heller Grauton
+     statt Reinweiss, damit er nicht blendet. Text im Rahmen deshalb fix dunkel. */
+  .pol{background:#fff;color:#111;border-radius:3px;padding:11px 11px 0;cursor:pointer;
+    box-shadow:0 3px 14px rgba(0,0,0,.16);overflow:hidden}
+  html[data-theme="dark"] .pol{background:#d9d7d1;box-shadow:0 3px 14px rgba(0,0,0,.5)}
+  .pol-img{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a}
+  .pol-img img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
+  html[data-theme="dark"] .pol-img img{filter:grayscale(20%) contrast(1.05) brightness(.92)}
+  /* der breite untere Rand — das Polaroid-Merkmal */
+  .pol-cap{padding:13px 5px 20px}
+  .pol-t{font-size:15px;font-weight:800;text-transform:uppercase;line-height:1.1;
+    display:flex;align-items:center;gap:8px}
+  .cat-dot{width:9px;height:9px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
+  .pol-m{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
+    color:#5c5a55;margin-top:5px}
+  .pol-acts{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+  .pol-acts .icon-btn{background:rgba(255,255,255,.9);width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .pol-acts .icon-btn svg{width:18px;height:18px;stroke:#111}
+  .pol-acts .icon-btn.saved svg{fill:#111}
+  .sec-head{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--muted);padding:4px 4px 0}
+  .pol-run{display:inline-block;margin-top:7px;font-size:10px;font-weight:800;letter-spacing:.8px;
+    text-transform:uppercase;color:#fff;background:var(--accent);padding:3px 8px;border-radius:999px}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-  .feed.reveal .card{animation:fadeUp .7s cubic-bezier(.22,1,.36,1) backwards}
-  .bar{position:absolute;left:0;right:0;background:var(--faded);padding:10px 14px;
-    display:flex;justify-content:space-between;align-items:flex-start}
-  .bar.top{top:0}
-  .bar.bottom{bottom:0;align-items:flex-end;min-height:54px}
-  .ev-title{font-size:17px;font-weight:800;line-height:1.05;text-transform:uppercase;color:var(--fg)}
-  .ev-sub{font-size:13px;font-weight:400;text-transform:uppercase;color:var(--sub)}
+  .feed.reveal .pol{animation:fadeUp .7s cubic-bezier(.22,1,.36,1) backwards}
   .meta{font-size:10.5px;font-weight:700;text-transform:uppercase;line-height:1.35;color:var(--fg)}
   .meta.right{text-align:right}
   .meta .light{font-weight:400}
-  .price-tag{position:absolute;top:52px;right:0;background:var(--fg);color:var(--bg);
+  .price-tag{position:absolute;top:10px;right:0;background:var(--fg);color:var(--bg);
     font-size:11px;font-weight:700;padding:4px 9px;letter-spacing:.5px;border-radius:999px 0 0 999px}
-  .live-tag{position:absolute;top:52px;left:0;background:var(--accent);color:#fff;
+  .live-tag{position:absolute;top:10px;left:0;background:var(--accent);color:#fff;
     font-size:11px;font-weight:800;padding:4px 9px;letter-spacing:.5px;border-radius:0 999px 999px 0}
-  .card-actions{display:flex;gap:10px;align-items:center}
   .icon-btn{background:none;border:none;cursor:pointer;padding:2px;line-height:0}
   .icon-btn svg{width:22px;height:22px;stroke:var(--fg);fill:none;stroke-width:2;transition:stroke .45s,fill .45s}
   .icon-btn.saved svg{fill:var(--fg)}
@@ -206,6 +226,14 @@
     text-transform:uppercase;font-family:inherit;border-radius:999px;
   }
   .rsvp-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* Like — ersetzt seit v10 den grossen RSVP-Block, bewusst klein */
+  .like-row{display:flex}
+  .like-btn{display:inline-flex;align-items:center;gap:9px;border:2px solid var(--fg);
+    background:var(--bg);color:var(--fg);font-weight:800;font-size:13px;letter-spacing:.5px;
+    padding:9px 18px;cursor:pointer;font-family:inherit;border-radius:999px;text-transform:uppercase}
+  .like-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
+  .like-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .like-btn.on svg{fill:currentColor}
   .d-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .d-actions button,.d-actions a{
     flex:1;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
@@ -214,6 +242,13 @@
   }
   .d-actions button.primary{background:var(--fg);color:var(--bg)}
   .d-actions button.saved-state{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* Kartenausschnitt im Detail — nur Anschauung, Navigation laeuft ueber die zwei Buttons */
+  .d-map{height:150px;border:2px solid var(--fg);border-radius:16px;overflow:hidden;
+    background:var(--hair)}
+  .d-maps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .d-maps a{border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
+    font-size:13px;letter-spacing:.5px;padding:13px 0;text-transform:uppercase;text-align:center;
+    text-decoration:none;border-radius:999px}
   .d-livebar{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;
     padding:8px 16px;text-transform:uppercase}
   /* timeline */
@@ -334,14 +369,28 @@
     transition:opacity .25s;pointer-events:none;z-index:950;white-space:nowrap}
   .toast.show{opacity:1}
   @media (prefers-reduced-motion:reduce){
-    .feed.reveal .card{animation:none}
+    .feed.reveal .pol{animation:none}
+    .ticker-track{animation:none}
   }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="logo" onclick="openSaeule()" style="cursor:pointer"><span>2BE</span></div>
+    <div class="logo" onclick="openSaeule()" style="cursor:pointer">
+      <!-- Provisorische Plakatsäulen-Silhouette. Das finale Logo kommt vom Designer —
+           dann NUR dieses <svg> ersetzen, sonst nichts anfassen. -->
+      <svg class="logo-sa" viewBox="0 0 24 34" aria-hidden="true">
+        <circle cx="12" cy="2.2" r="1.4"/>
+        <rect x="11.4" y="3" width="1.2" height="2.2"/>
+        <path d="M5.5 9a6.5 4.6 0 0 1 13 0z"/>
+        <rect x="4.6" y="9" width="14.8" height="1.8"/>
+        <rect x="6.2" y="10.8" width="11.6" height="17"/>
+        <rect x="5" y="27.8" width="14" height="1.6"/>
+        <rect x="3.8" y="29.4" width="16.4" height="3.2"/>
+      </svg>
+      <span>2BE</span>
+    </div>
     <div class="h-right">
       <div class="city">BERN ▾</div>
     </div>
@@ -350,19 +399,16 @@
   <!-- FIND -->
   <div class="view active" id="view-find">
     <div id="map"></div>
-    <div class="map-btns">
-      <div class="dfilter">
-        <button class="mbtn" id="dateBtn" onclick="toggleDatePop(event)">ALLE</button>
-        <div class="datepop" id="datePop"></div>
-      </div>
+    <!-- Overlay am oberen Kartenrand: Live-Band, darunter die Filter-Chips (Datum-Pill vorne) -->
+    <div class="map-top" id="mapTop">
+      <div class="ticker" id="ticker" style="display:none"></div>
+      <div class="filters" id="filters"></div>
     </div>
-    <div id="sheet" class="snap s-half">
+    <div id="sheet" class="snap s-map">
       <div class="handle" id="handle">
         <div class="grabber"></div>
         <div class="handle-label" id="handleLabel">EVENTS</div>
       </div>
-      <div class="live-row" id="liveRow" style="display:none"></div>
-      <div class="filters" id="filters"></div>
       <div class="sheet-body">
         <div class="feed" id="feed"></div>
       </div>
@@ -393,7 +439,7 @@
       <div class="p-row"><span data-i18n="city">Stadt</span><span class="val">Bern</span></div>
       <div class="p-row"><span data-i18n="notifications">Benachrichtigungen</span><span class="val" data-i18n="off">Aus</span></div>
       <div class="p-row" onclick="openSubmit()" style="cursor:pointer"><span data-i18n="submitEvent">Event einreichen</span><span class="val">→</span></div>
-      <div class="p-note" data-i18n="profileNote">Prototyp v9.1 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.</div>
+      <div class="p-note" data-i18n="profileNote">Prototyp v10 — Favoriten, Likes und Erscheinungsbild werden lokal im Browser gespeichert.</div>
     </div>
   </div>
 
@@ -494,11 +540,11 @@ const I18N = {
   de:{
     events:"EVENTS", showList:"LISTE ANZEIGEN",
     range_all:"Alle Daten", range_month:"Diesen Monat", range_week:"Diese Woche", range_today:"Heute",
-    rs_all:"ALLE", rs_month:"MONAT", rs_week:"WOCHE", rs_today:"HEUTE",
+    rs_any:"ZEITRAUM", rs_all:"ALLE", rs_month:"MONAT", rs_week:"WOCHE", rs_today:"HEUTE",
     appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
     language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
     submitEvent:"Event einreichen",
-    profileNote:"Prototyp v9.1 — Favoriten, RSVP und Erscheinungsbild werden lokal im Browser gespeichert.",
+    profileNote:"Prototyp v10 — Favoriten, Likes und Erscheinungsbild werden lokal im Browser gespeichert.",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, Titel, Datum, Link — fertig in 30 Sekunden. Das Team prüft jede Einreichung, bevor sie live geht.",
     lblFlyer:"Flyer-Foto", flyerCta:"Foto aufnehmen oder hochladen", errFlyer:"Flyer-Foto fehlt",
@@ -517,10 +563,12 @@ const I18N = {
     emptyAdjust:"Kategorie oder Zeitraum anpassen.",
     upcoming:"(Meine) nächsten Events",
     emptySavedTitle:"Noch nichts gespeichert.", emptySavedText:"Markiere Events im Feed mit dem Lesezeichen.",
-    liveNow:"● Läuft jetzt gerade", going:"✓ Du gehst hin", notGoing:"Ich gehe hin",
+    liveNow:"● Läuft jetzt gerade", like:"Gefällt mir", liked:"Gefällt dir",
+    secRunning:"Läuft gerade", secUpcoming:"Demnächst",
+    lastDay:"Letzter Tag", leftDays:"Noch {n} Tage", leftWeeks:"Noch {n} Wochen", until:"Bis {d}",
     saved:"✓ Gespeichert", save:"Speichern", share:"Teilen", calendar:"+ Kalender",
     tShare:"Teilen", tSave:"Speichern", tRemove:"Entfernen",
-    toastRange:"Zeitraum: {n}", toastRsvp:"Bis dann! 🤝",
+    toastRange:"Zeitraum: {n}",
     toastCal:"Termin erstellt — im Kalender öffnen", toastShare:"Link kopiert — auch ohne App öffenbar",
     soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"beginnt bald",
     cat_all:"Alle", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
@@ -528,11 +576,11 @@ const I18N = {
   en:{
     events:"EVENTS", showList:"SHOW LIST",
     range_all:"All dates", range_month:"This month", range_week:"This week", range_today:"Today",
-    rs_all:"ALL", rs_month:"MONTH", rs_week:"WEEK", rs_today:"TODAY",
+    rs_any:"DATE", rs_all:"ALL", rs_month:"MONTH", rs_week:"WEEK", rs_today:"TODAY",
     appearance:"Appearance", day:"Day", night:"Night",
     language:"Language", city:"City", notifications:"Notifications", off:"Off",
     submitEvent:"Submit event",
-    profileNote:"Prototype v9.1 — favourites, RSVP and appearance are stored locally in your browser.",
+    profileNote:"Prototype v10 — favourites, likes and appearance are stored locally in your browser.",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, title, date, link — done in 30 seconds. The team reviews every submission before it goes live.",
     lblFlyer:"Flyer photo", flyerCta:"Take or upload a photo", errFlyer:"Flyer photo missing",
@@ -551,10 +599,12 @@ const I18N = {
     emptyAdjust:"Adjust the category or the time range.",
     upcoming:"(My) Upcoming Events",
     emptySavedTitle:"Nothing saved yet.", emptySavedText:"Bookmark events in the feed to add them here.",
-    liveNow:"● Happening now", going:"✓ You're going", notGoing:"I'm going",
+    liveNow:"● Happening now", like:"Like", liked:"Liked",
+    secRunning:"Happening now", secUpcoming:"Upcoming",
+    lastDay:"Last day", leftDays:"{n} days left", leftWeeks:"{n} weeks left", until:"Until {d}",
     saved:"✓ Saved", save:"Save", share:"Share", calendar:"+ Calendar",
     tShare:"Share", tSave:"Save", tRemove:"Remove",
-    toastRange:"Time range: {n}", toastRsvp:"See you there! 🤝",
+    toastRange:"Time range: {n}",
     toastCal:"Event created — open in your calendar", toastShare:"Link copied — opens without the app too",
     soonMin:"IN {n} MIN", soonH:"IN {n} H", icsSoon:"starts soon",
     cat_all:"All", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Other"
@@ -562,11 +612,11 @@ const I18N = {
   fr:{
     events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE",
     range_all:"Toutes les dates", range_month:"Ce mois", range_week:"Cette semaine", range_today:"Aujourd'hui",
-    rs_all:"TOUTES", rs_month:"MOIS", rs_week:"SEMAINE", rs_today:"AUJ.",
+    rs_any:"DATE", rs_all:"TOUTES", rs_month:"MOIS", rs_week:"SEMAINE", rs_today:"AUJ.",
     appearance:"Apparence", day:"Jour", night:"Nuit",
     language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
     submitEvent:"Proposer un événement",
-    profileNote:"Prototype v9.1 — favoris, RSVP et apparence sont stockés localement dans ton navigateur.",
+    profileNote:"Prototype v10 — favoris, likes et apparence sont stockés localement dans ton navigateur.",
     navFind:"explorer", navProfile:"profil",
     subIntro:"Flyer, titre, date, lien — prêt en 30 secondes. L'équipe vérifie chaque proposition avant sa publication.",
     lblFlyer:"Photo du flyer", flyerCta:"Prendre ou importer une photo", errFlyer:"Photo du flyer manquante",
@@ -585,10 +635,12 @@ const I18N = {
     emptyAdjust:"Ajuste la catégorie ou la période.",
     upcoming:"(Mes) prochains événements",
     emptySavedTitle:"Rien d'enregistré pour l'instant.", emptySavedText:"Ajoute des événements avec le marque-page dans le feed.",
-    liveNow:"● En ce moment", going:"✓ Tu y vas", notGoing:"J'y vais",
+    liveNow:"● En ce moment", like:"J'aime", liked:"Aimé",
+    secRunning:"En ce moment", secUpcoming:"Prochainement",
+    lastDay:"Dernier jour", leftDays:"Encore {n} jours", leftWeeks:"Encore {n} semaines", until:"Jusqu'au {d}",
     saved:"✓ Enregistré", save:"Enregistrer", share:"Partager", calendar:"+ Agenda",
     tShare:"Partager", tSave:"Enregistrer", tRemove:"Retirer",
-    toastRange:"Période : {n}", toastRsvp:"À bientôt ! 🤝",
+    toastRange:"Période : {n}",
     toastCal:"Événement créé — ouvre-le dans ton agenda", toastShare:"Lien copié — s'ouvre même sans l'app",
     soonMin:"DANS {n} MIN", soonH:"DANS {n} H", icsSoon:"commence bientôt",
     cat_all:"Tous", cat_fashion:"Fashion", cat_art:"Art", cat_music:"Music", cat_other:"Autres"
@@ -626,8 +678,16 @@ function makeEvent(o){
   const start = new Date();
   start.setDate(start.getDate()+o.offset);
   start.setHours(o.h, 0, 0, 0);
-  const end = new Date(start.getTime() + o.dur*3600*1000);
-  const ev = {...o, start, end,
+  // Pop-ups laufen ueber Wochen: eigenes Enddatum, taeglich dieselben Oeffnungszeiten
+  let end;
+  if(o.art === "popup" && o.endOffset != null){
+    end = new Date();
+    end.setDate(end.getDate()+o.endOffset);
+    end.setHours(o.h + o.dur, 0, 0, 0);
+  } else {
+    end = new Date(start.getTime() + o.dur*3600*1000);
+  }
+  const ev = {...o, art:o.art || "event", start, end,
     sort: start.toISOString().slice(0,10),
     time: _p(o.h)+".00 – "+_p(end.getHours())+".00"};
   labelEvent(ev);
@@ -668,6 +728,22 @@ const EVENTS = [
   addr1:"BELLEVUESTRASSE 5", addr2:"3095 SPIEGEL", price:null, lat:46.9262, lng:7.4312, city:"bern",
   desc:"Kunst- und Fashion-Crossover im Spiegel. Ein Abend, danach ist es wieder weg.",
   ig:"https://www.instagram.com/2be.app", seed:"poppy"},
+ // --- Pop-ups: laufen ueber Wochen statt einen Abend (v10) ---
+ {id:9, title:"ATELIER 3011", sub:"POP-UP STORE", tags:["fashion"], art:"popup",
+  offset:-12, endOffset:33, h:12, dur:7,
+  addr1:"RATHAUSGASSE 22", addr2:"3011 BERN", price:null, lat:46.9484, lng:7.4520, city:"bern",
+  desc:"Sechs Berner Labels teilen sich bis in den Herbst einen Raum in der Rathausgasse. Jede Woche wechselt die Auslage.",
+  ig:"https://www.instagram.com/2be.app", seed:"atelier3011"},
+ {id:10, title:"GLASHAUS", sub:"CONCEPT STORE", tags:["art"], art:"popup",
+  offset:-4, endOffset:8, h:11, dur:8,
+  addr1:"MARZILISTRASSE 4", addr2:"3005 BERN", price:null, lat:46.9425, lng:7.4457, city:"bern",
+  desc:"Druckgrafik, Keramik und Editionen von zwoelf Kunstschaffenden — zwei Wochen im alten Glashaus am Marzili.",
+  ig:"https://www.instagram.com/2be.app", seed:"glashaus"},
+ {id:11, title:"KIOSK 44", sub:"WINTER POP-UP", tags:["other"], art:"popup",
+  offset:12, endOffset:74, h:13, dur:6,
+  addr1:"LORRAINESTRASSE 44", addr2:"3013 BERN", price:null, lat:46.9556, lng:7.4432, city:"bern",
+  desc:"Der Winterkiosk in der Lorraine: Bücher, Platten, heisse Getränke und jeden Donnerstag ein Gast hinter der Theke.",
+  ig:"https://www.instagram.com/2be.app", seed:"kiosk44"},
 ].map(makeEvent);
 
 // Nur vier Kategorien + «Alle» — bewusst minimal gehalten (Entscheid 18.08)
@@ -682,18 +758,34 @@ const CATS = [
 const RANGES = ["all","month","week","today"];
 
 // ================= State =================
-let state = { cat:"all", range:"all", saved:new Set(), rsvp:new Set(), view:"find", sheet:"half" };
+let state = { cat:"all", range:"all", saved:new Set(), likes:new Set(), view:"find", sheet:"map" };
 try{ state.saved = new Set(JSON.parse(localStorage.getItem("2be_saved")||"[]")); }catch(e){}
-try{ state.rsvp  = new Set(JSON.parse(localStorage.getItem("2be_rsvp")||"[]")); }catch(e){}
-// Demo-Basiswerte «gehen hin» (später echt aus der Datenbank)
-const GOING = {1:14, 2:31, 3:9, 4:12, 5:22, 6:7, 7:11, 8:16};
+// v10: RSVP ist zum Like geworden — alte gespeicherte RSVPs einmalig uebernehmen
+try{
+  const raw = localStorage.getItem("2be_likes") || localStorage.getItem("2be_rsvp") || "[]";
+  state.likes = new Set(JSON.parse(raw));
+}catch(e){}
+// Demo-Basiswerte Likes (später echt aus der Datenbank)
+const LIKES = {1:14, 2:31, 3:9, 4:12, 5:22, 6:7, 7:11, 8:16, 9:47, 10:26, 11:5};
 let map, markers = [], tiles = null, firstFeedRender = true;
 
 // ================= Helpers =================
 const $ = id => document.getElementById(id);
 const bmSvg = '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg>';
+const heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.6-7-9.3A4.2 4.2 0 0 1 12 8a4.2 4.2 0 0 1 7 2.7c0 4.7-7 9.3-7 9.3z"/></svg>';
 const shSvg = '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></svg>';
-const isLive = e => { const n = new Date(); return n >= e.start && n <= e.end; };
+// Ein Pop-up laeuft wochenlang — es ist deshalb NICHT «live» im Sinne von Ticker und Puls-Pin.
+const isRunning = e => { const n = new Date(); return n >= e.start && n <= e.end; };
+const isLive = e => e.art !== "popup" && isRunning(e);
+// Restlaufzeit eines laufenden Pop-ups: «Letzter Tag» / «Noch 8 Tage» / «Noch 5 Wochen» / «Bis 14. November»
+function runBadge(e){
+  if(e.art !== "popup" || !isRunning(e)) return null;
+  const days = Math.ceil((e.end - new Date())/86400000);
+  if(days <= 1)  return t("lastDay");
+  if(days <= 13) return t("leftDays").replace("{n}", days);
+  if(days <= 60) return t("leftWeeks").replace("{n}", Math.round(days/7));
+  return t("until").replace("{d}", DATEFMT[LANG](e.end));
+}
 const img = (e,s) => `https://picsum.photos/seed/${e.seed}/${s}/${s}?grayscale`;
 // Kategorie-Farben — vier Stück, mehr nicht (Live sticht mit Violett + Puls heraus)
 const CATCOLORS = {fashion:"#FFE01A", art:"#3DDC97", music:"#2F80FF", other:"#9AA0A6"};
@@ -706,22 +798,28 @@ function soonLabel(e){
 
 // ---- Datum-Filter -------------------------------------------------------
 const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+// Ein Eintrag zaehlt in jede Stufe, in deren Zeitraum er hineinragt. Damit erscheint ein
+// Pop-up unter «Diese Woche», weil es diese Woche offen hat — nicht nur, wenn es dann startet.
+function overlaps(e, from, to){ return e.start < to && e.end >= from; }
 function inRange(e){
   const r = state.range;
   if(r==="all") return true;
   const now = new Date();
   if(r==="today"){
-    // was heute startet — und was gerade läuft, auch wenn es gestern begonnen hat
-    return isLive(e) || startOfDay(e.start).getTime() === startOfDay(now).getTime();
+    const from = startOfDay(now);
+    const to = new Date(from); to.setDate(to.getDate()+1);
+    return overlaps(e, from, to);
   }
   if(r==="week"){
     const from = startOfDay(now);
     from.setDate(from.getDate() - ((from.getDay()+6)%7)); // Woche beginnt am Montag
     const to = new Date(from); to.setDate(to.getDate()+7);
-    return e.start >= from && e.start < to;
+    return overlaps(e, from, to);
   }
   if(r==="month"){
-    return e.start.getFullYear()===now.getFullYear() && e.start.getMonth()===now.getMonth();
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    const to   = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    return overlaps(e, from, to);
   }
   return true;
 }
@@ -733,12 +831,27 @@ function filtered(){
 function persist(){
   try{
     localStorage.setItem("2be_saved", JSON.stringify([...state.saved]));
-    localStorage.setItem("2be_rsvp",  JSON.stringify([...state.rsvp]));
+    localStorage.setItem("2be_likes", JSON.stringify([...state.likes]));
   }catch(e){}
 }
 function toast(msg){
   const t=$("toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+// ================= Standort =================
+// Karte zeigt sofort Bern und rezentriert weich, sobald der Standort da ist.
+// Ablehnung oder Fehler: es bleibt bei Bern, ohne Meldung.
+let userMarker = null;
+function locateUser(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    const ll = [pos.coords.latitude, pos.coords.longitude];
+    if(userMarker) userMarker.remove();
+    userMarker = L.marker(ll, {interactive:false, zIndexOffset:-500, icon:L.divIcon({
+      className:"", html:'<div class="userdot"></div>', iconSize:[14,14], iconAnchor:[7,7]})}).addTo(map);
+    map.flyTo(ll, 14, {duration:1.1});
+  }, ()=>{}, {enableHighAccuracy:false, timeout:8000, maximumAge:300000});
 }
 
 // ================= Theme =================
@@ -761,6 +874,7 @@ function applyTheme(){
     tiles = L.tileLayer(t==="dark"?TILE_DARK:TILE_LIGHT,{maxZoom:19}).addTo(map);
     if(markers.length) renderMap();
   }
+  if($("detail").classList.contains("open") && state.detailId) renderDetail(state.detailId);
   if(saReady) saRefresh();
 }
 function setThemeMode(m){
@@ -800,35 +914,53 @@ function initLang(){
 
 // ================= Render =================
 function renderFilters(){
-  $("filters").innerHTML = CATS.map(c =>
+  // Datum-Pill steht ganz vorne in derselben Zeile wie die Kategorie-Chips (v10)
+  $("filters").innerHTML =
+    `<div class="dfilter">
+       <button class="chip" id="dateBtn" onclick="toggleDatePop(event)">ALLE</button>
+       <div class="datepop" id="datePop"></div>
+     </div>` +
+    CATS.map(c =>
     `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${catLabel(c.key)}</button>`).join("");
+}
+
+// Eine Polaroid-Card: Bild 1:1 im Rahmen, unten breiter Rand mit Titel / Datum · Venue
+function polCard(e,i){
+  const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
+  return `
+    <article class="pol" id="card-${e.id}" onclick="openDetail(${e.id})" ${firstFeedRender?`style="animation-delay:${.15+i*.08}s"`:""}>
+      <div class="pol-img">
+        <img src="${img(e,700)}" alt="" loading="lazy">
+        ${e.price?`<div class="price-tag">${e.price}</div>`:""}
+        ${isLive(e)?`<div class="live-tag">LIVE</div>`:(soonLabel(e)?`<div class="soon-tag">${soonLabel(e)}</div>`:"")}
+        <div class="pol-acts">
+          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="${t('tShare')}">${shSvg}</button>
+          <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tSave')}">${bmSvg}</button>
+        </div>
+      </div>
+      <div class="pol-cap">
+        <div class="pol-t"><span class="cat-dot" style="background:${color}"></span>${e.title}</div>
+        <div class="pol-m">${e.date} · ${e.addr1}</div>
+        ${runBadge(e)?`<div class="pol-run">${runBadge(e)}</div>`:""}
+      </div>
+    </article>`;
 }
 
 function renderFeed(){
   const list = filtered();
   const feed = $("feed");
   feed.classList.toggle("reveal", firstFeedRender);
-  feed.innerHTML = list.length ? list.map((e,i) => `
-    <div class="card" id="card-${e.id}" onclick="openDetail(${e.id})" ${firstFeedRender?`style="animation-delay:${.15+i*.08}s"`:""}>
-      <img src="${img(e,700)}" alt="" loading="lazy">
-      <div class="bar top">
-        <div>
-          <div class="ev-title">${e.title}</div>
-          <div class="ev-sub">${e.sub}</div>
-        </div>
-        <div class="card-actions">
-          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="${t('tShare')}">${shSvg}</button>
-          <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tSave')}">${bmSvg}</button>
-        </div>
-      </div>
-      ${e.price?`<div class="price-tag">${e.price}</div>`:""}
-      ${isLive(e)?`<div class="live-tag">LIVE</div>`:(soonLabel(e)?`<div class="soon-tag">${soonLabel(e)}</div>`:"")}
-      <div class="bar bottom">
-        <div class="meta">${e.day}<br>${e.date}<br><span class="light">${e.time}</span></div>
-        <div class="meta right">${e.addr1}<br>${e.addr2}</div>
-      </div>
-    </div>`).join("")
-  : `<div class="empty">${t('emptyNothing')}${state.cat!=="all"?t('emptyInCat'):""}.<br>${t('emptyAdjust')}</div>`;
+  if(!list.length){
+    feed.innerHTML = `<div class="empty">${t('emptyNothing')}${state.cat!=="all"?t('emptyInCat'):""}.<br>${t('emptyAdjust')}</div>`;
+    firstFeedRender = false; return;
+  }
+  // Was gerade laeuft, steht oben — laufende Pop-ups passen sonst in keine Upcoming-Liste
+  const running  = list.filter(isRunning);
+  const upcoming = list.filter(e => !isRunning(e));
+  let i = 0, html = "";
+  if(running.length)  html += `<div class="sec-head">${t('secRunning')}</div>`  + running.map(e=>polCard(e,i++)).join("");
+  if(upcoming.length) html += `<div class="sec-head">${t('secUpcoming')}</div>` + upcoming.map(e=>polCard(e,i++)).join("");
+  feed.innerHTML = html;
   firstFeedRender = false;
 }
 
@@ -854,7 +986,7 @@ function renderMap(){
       const size = live ? 18 : 14;
       const icon = L.divIcon({
         className:"",
-        html:`<div class="pin ${live?'live':''}" style="${live?'':'background:'+color}"></div>`,
+        html:`<div class="pin ${live?'live':''} ${e.art==='popup'?'popup':''}" style="${live?'':'background:'+color}"></div>`,
         iconSize:[size,size], iconAnchor:[size/2,size/2]
       });
       const m = L.marker([e.lat,e.lng],{icon}).addTo(map);
@@ -877,16 +1009,37 @@ function renderMap(){
   });
 }
 
-function renderLive(){
+// Live-Laufband am oberen Kartenrand. Laeuft gerade nichts, ist das Band komplett weg.
+const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+let tickerTimer = null;
+function tickerItem(e){
+  return `<span class="ticker-item" onclick="openDetail(${e.id})"><span class="tdot"></span>` +
+         `LIVE — ${e.title} · ${e.addr1} · ${catLabel(e.tags[0])}</span>`;
+}
+function renderTicker(){
   const live = EVENTS.filter(isLive);
-  const row = $("liveRow");
-  if(!live.length){ row.style.display="none"; return; }
-  row.style.display="flex";
-  row.innerHTML = `<div class="live-head"><span><span class="dot"></span>LIVE</span></div>` +
-    live.map(e=>`<div class="live-item" onclick="openDetail(${e.id})">
-      <img class="live-thumb" src="${img(e,100)}" alt="">
-      <span class="live-label">${e.title}</span>
-    </div>`).join("");
+  const box = $("ticker");
+  if(tickerTimer){ clearInterval(tickerTimer); tickerTimer = null; }
+  if(!live.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block";
+  if(REDUCED_MOTION){
+    // Kein Lauf: ein Eintrag steht, wechselt alle 4 s
+    box.innerHTML = `<div class="ticker-static" id="tickerStatic"></div>`;
+    let i = 0;
+    const paint = () => { const el=$("tickerStatic"); if(!el) return; el.innerHTML = tickerItem(live[i%live.length]); i++; };
+    paint();
+    tickerTimer = setInterval(paint, 4000);
+  } else {
+    // Inhalt doppelt, damit die Schleife nahtlos umspringt (-50%)
+    const items = live.map(tickerItem).join("");
+    box.innerHTML = `<div class="ticker-track">${items}${items}</div>`;
+  }
+}
+function initTicker(){
+  const box = $("ticker");
+  box.addEventListener("pointerdown", ()=>box.classList.add("paused"));
+  ["pointerup","pointercancel","pointerleave"].forEach(ev =>
+    box.addEventListener(ev, ()=>box.classList.remove("paused")));
 }
 
 function renderTimeline(){
@@ -925,10 +1078,11 @@ function renderNav(){
 
 function renderDetail(id){
   const e = EVENTS.find(x=>x.id===id); if(!e) return;
+  destroyDetailMap();
   state.detailId = id;
   const saved = state.saved.has(e.id);
-  const going = state.rsvp.has(e.id);
-  const count = (GOING[e.id]||0) + (going?1:0);
+  const liked = state.likes.has(e.id);
+  const count = (LIKES[e.id]||0) + (liked?1:0);
   $("detail").innerHTML = `
     <div class="d-imgwrap">
       <button class="d-close" onclick="closeDetail()">✕</button>
@@ -942,31 +1096,55 @@ function renderDetail(id){
         <div class="d-sub">${e.sub}</div>
       </div>
       <div class="d-grid">
-        <div class="meta">${e.day}<br>${e.date}<br><span class="light">${e.time}</span></div>
+        <div class="meta">${e.art==="popup"?`${e.date} – ${DATEFMT[LANG](e.end)}`:`${e.day}<br>${e.date}`}<br><span class="light">${e.time}</span></div>
         <div class="meta right">${e.addr1}<br>${e.addr2}</div>
       </div>
       <div class="d-desc">${e.desc}</div>
-      <div class="d-tags">${e.tags.map(tag=>`<span class="d-tag">${catLabel(tag)}</span>`).join("")}</div>
-      <button class="rsvp-btn ${going?'on':''}" onclick="toggleRsvp(${e.id})">
-        ${going?t('going'):t('notGoing')} · ${count}
-      </button>
+      <div class="d-tags">${e.tags.map(tag=>`<span class="d-tag">${catLabel(tag)}</span>`).join("")}${runBadge(e)?`<span class="d-tag" style="background:var(--accent);color:#fff;border-color:var(--accent)">${runBadge(e)}</span>`:""}</div>
+      <div class="like-row">
+        <button class="like-btn ${liked?'on':''}" onclick="toggleLike(${e.id})">
+          ${heartSvg}<span>${count}</span>
+        </button>
+      </div>
       <div class="d-actions">
         <button class="${saved?'saved-state':'primary'}" onclick="toggleSave(${e.id});renderDetail(${e.id})">${saved?t('saved'):t('save')}</button>
         <button onclick="share(${e.id})">${t('share')}</button>
         <button onclick="calExport(${e.id})">${t('calendar')}</button>
         <a href="${e.ig}" target="_blank" rel="noopener">Instagram ↗</a>
       </div>
+      <div class="d-map" id="dmap"></div>
+      <div class="d-maps">
+        <a href="https://maps.apple.com/?q=${encodeURIComponent(e.title)}&ll=${e.lat},${e.lng}" target="_blank" rel="noopener">Apple Maps</a>
+        <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" rel="noopener">Google Maps</a>
+      </div>
     </div>`;
+  initDetailMap(e);
 }
 
+// Statischer Kartenausschnitt im Detail: nicht verschiebbar, nicht zoombar.
+let dmap = null;
+function initDetailMap(e){
+  const el = $("dmap"); if(!el || typeof L === "undefined") return;
+  dmap = L.map(el, {zoomControl:false, attributionControl:false, dragging:false,
+    scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false, boxZoom:false,
+    keyboard:false, tap:false}).setView([e.lat, e.lng], 15);
+  L.tileLayer(currentTheme()==="dark"?TILE_DARK:TILE_LIGHT, {maxZoom:19}).addTo(dmap);
+  const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
+  L.marker([e.lat, e.lng], {interactive:false, icon:L.divIcon({className:"",
+    html:`<div class="pin ${e.art==='popup'?'popup':''}" style="background:${color}"></div>`,
+    iconSize:[14,14], iconAnchor:[7,7]})}).addTo(dmap);
+  setTimeout(()=>{ if(dmap) dmap.invalidateSize(); }, 60);
+}
+function destroyDetailMap(){ if(dmap){ dmap.remove(); dmap = null; } }
+
 function renderDateFilter(){
-  $("dateBtn").textContent = t("rs_"+state.range);
+  $("dateBtn").textContent = (state.range==="all" ? t("rs_any") : t("rs_"+state.range)) + " \u25BE";
   $("dateBtn").classList.toggle("on", state.range !== "all");
   $("datePop").innerHTML = RANGES.map(r =>
     `<button class="${state.range===r?'on':''}" onclick="setRange('${r}')">${t("range_"+r)}</button>`).join("");
 }
 
-function renderAll(){ renderFilters(); renderDateFilter(); renderLive(); renderFeed(); renderMap(); renderTimeline(); renderNav(); }
+function renderAll(){ renderFilters(); renderDateFilter(); renderTicker(); renderFeed(); renderMap(); renderTimeline(); renderNav(); }
 
 // ================= Actions =================
 function setCat(c){ state.cat=c; renderAll(); }
@@ -986,9 +1164,12 @@ function setRange(r){
 const sheet = ()=>$("sheet");
 function sheetY(s){
   const h = sheet().clientHeight;
-  if(s==="list") return 110;               // Liste gross, Kartenstreifen oben
-  if(s==="half") return Math.round(h*0.45);// Standard: halb/halb
-  return h-96;                             // Kartenmodus: nur Griff sichtbar
+  // Voll: Liste gross, oben bleibt so viel Karte stehen, dass Band + Chips sichtbar sind
+  const topH = ($("mapTop") ? $("mapTop").offsetHeight : 0) + 14;
+  if(s==="list") return Math.max(110, topH);
+  if(s==="half") return Math.round(h*0.45);
+  // Peek: Griff + Oberkante der ersten Card, Karte praktisch vollflaechig
+  return h - Math.min(150, Math.max(110, Math.round(h*0.16)));
 }
 function setSheet(s, animate=true){
   state.sheet = s;
@@ -1020,8 +1201,7 @@ function initSheet(){
     if(!h.hasPointerCapture(ev.pointerId)) return;
     const dy = ev.clientY - startY;
     if(Math.abs(dy)>6) moved=true;
-    const hgt = sheet().clientHeight;
-    const y = Math.min(Math.max(startT+dy, 110), hgt-96);
+    const y = Math.min(Math.max(startT+dy, sheetY("list")), sheetY("map"));
     sheet().style.transform = `translateY(${y}px)`;
   });
   h.addEventListener("pointerup", ev=>{
@@ -1057,16 +1237,16 @@ function toggleSave(id){
 }
 function syncSaved(){
   document.querySelectorAll(".icon-btn.bm").forEach(btn=>{
-    const id = Number(btn.closest(".card").id.replace("card-",""));
+    const el = btn.closest(".pol"); if(!el) return;
+    const id = Number(el.id.replace("card-",""));
     btn.classList.toggle("saved", state.saved.has(id));
   });
   renderNav(); renderTimeline();
 }
-function toggleRsvp(id){
-  state.rsvp.has(id) ? state.rsvp.delete(id) : state.rsvp.add(id);
+function toggleLike(id){
+  state.likes.has(id) ? state.likes.delete(id) : state.likes.add(id);
   persist();
   renderDetail(id);
-  if(state.rsvp.has(id)) toast(t("toastRsvp"));
 }
 function calExport(id){
   const e = EVENTS.find(x=>x.id===id); if(!e) return;
@@ -1103,7 +1283,7 @@ function share(id){
   }
 }
 function openDetail(id){ renderDetail(id); $("detail").classList.add("open"); }
-function closeDetail(){ $("detail").classList.remove("open"); syncSaved(); }
+function closeDetail(){ destroyDetailMap(); $("detail").classList.remove("open"); syncSaved(); }
 
 // ================= Submit (Mock — schreibt später in die Supabase-Vetting-Queue) =================
 let flyerData = null;
@@ -1461,7 +1641,9 @@ document.addEventListener("click", ()=>closeDatePop());
 initTheme();
 initLang();
 initSheet();
-setSheet("half", false);
+initTicker();
+setSheet("map", false);   // Start: volle Kartenansicht (v10)
+locateUser();
 renderAll();
 // Geteilter Link? Direkt das Event öffnen
 const sharedId = Number(new URLSearchParams(location.search).get("event"));
