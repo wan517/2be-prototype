@@ -8,7 +8,7 @@
 <!-- "black-translucent": die App laeuft unter der Statusleiste durch, die Karte reicht bis an
      den oberen Rand und die Dynamic Island schwebt darueber. Die Schrift der Statusleiste ist
      in diesem Modus IMMER weiss - jede Ansicht muss oben also selbst fuer dunklen Grund sorgen:
-     FIND ueber den Verlauf in .map-head, die anderen ueber .safe-top in Akzentviolett. -->
+     FIND ueber den Verlauf in .map-scrim, die anderen ueber .safe-top in Akzentviolett. -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="2BE">
 <!-- Fest dunkel: im Safari toent das den Streifen ueber der Seite, damit er in den
@@ -58,20 +58,11 @@
     body{background:var(--bg)}
     #app{max-width:none;box-shadow:none}
   }
-  /* Kopfzeile schwebt ueber der Karte statt als Balken davor (v12).
-     Der Verlauf deckt die Statusleisten-Zone mit ab - sonst waere die weisse
-     Systemschrift auf der hellen Tageskarte unlesbar. */
-  .map-head{
-    display:flex;align-items:center;justify-content:space-between;pointer-events:auto;
-    padding:calc(env(safe-area-inset-top, 0px) + 6px) 16px 11px;
-    background:linear-gradient(180deg,rgba(0,0,0,.60) 0%,rgba(0,0,0,.40) 55%,rgba(0,0,0,0) 100%);
-  }
-  .logo{font-weight:800;font-size:20px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;
-    color:#fff;cursor:pointer}
-  .logo span{background:var(--accent);padding:0 4px;color:#fff}
-  .logo-sa{height:23px;width:auto;fill:#fff;flex:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
-  .city{font-size:12px;font-weight:700;letter-spacing:1px;color:#fff;
-    text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  /* Keine Kopfzeile mehr (Input David 08.09.: Logo und Ort weg, die Dynamic Island stoert).
+     Der Verlauf deckt nur noch die Statusleisten-Zone, damit die weisse Systemschrift
+     auf der hellen Tageskarte lesbar bleibt. */
+  .map-scrim{height:calc(env(safe-area-inset-top, 0px) + 10px);pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,0,0,.48) 0%,rgba(0,0,0,.16) 60%,rgba(0,0,0,0) 100%)}
   /* Statusleisten-Zone in den Ansichten ohne Karte - Violett, damit die weisse Systemschrift traegt */
   .safe-top{flex:none;height:env(safe-area-inset-top, 0px);background:var(--accent)}
   .view-title{flex:none;padding:14px 16px 12px;font-size:19px;font-weight:800;
@@ -95,9 +86,10 @@
   .map-top{position:absolute;top:0;left:0;right:0;z-index:600;pointer-events:none}
   .map-top > *{pointer-events:auto}
   /* Live-Laufband — News-Ticker (v10, ersetzt die alte Live-Leiste im Sheet) */
-  .ticker{background:var(--accent);color:#fff;overflow:hidden;white-space:nowrap;
+  /* Live-Band sitzt unten ueber der Navigation, nicht mehr oben auf der Karte */
+  .ticker{flex:none;background:var(--accent);color:#fff;overflow:hidden;white-space:nowrap;
     padding:5px 0;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
-    box-shadow:0 2px 10px rgba(0,0,0,.18)}
+    z-index:21;box-shadow:0 -2px 10px rgba(0,0,0,.18)}
   .ticker-track{display:inline-block;white-space:nowrap;will-change:transform;
     animation:tickerRun 34s linear infinite}
   .ticker.paused .ticker-track{animation-play-state:paused}
@@ -173,32 +165,34 @@
   /* Standortpunkt des Nutzers */
   .userdot{width:14px;height:14px;border-radius:50%;background:#2F80FF;border:2.5px solid #fff;
     box-shadow:0 0 0 4px rgba(47,128,255,.22),0 1px 4px rgba(0,0,0,.35)}
-  /* cards — Polaroid-Stil (v10), eine Spalte */
-  .feed{padding:16px 18px 14px;display:flex;flex-direction:column;gap:20px}
+  /* cards — Polaroid-Stil, Layout nach Input David 08.09. (Variante A):
+     Datum links / Zeit rechts ueber dem Bild, Bild 1:1, darunter Titel und Adresse.
+     Rahmen gesamt rund 4:5. Engere Abstaende als zuvor. */
+  .feed{padding:14px 16px 12px;display:flex;flex-direction:column;gap:14px}
   /* Der Polaroid-Rahmen ist in BEIDEN Themes hell — im Nachtmodus ein heller Grauton
      statt Reinweiss, damit er nicht blendet. Text im Rahmen deshalb fix dunkel. */
-  .pol{background:#fff;color:#111;border-radius:3px;padding:11px 11px 0;cursor:pointer;
+  .pol{background:#fff;color:#111;border-radius:2px;padding:8px 8px 0;cursor:pointer;
     box-shadow:0 3px 14px rgba(0,0,0,.16);overflow:hidden}
   html[data-theme="dark"] .pol{background:#d9d7d1;box-shadow:0 3px 14px rgba(0,0,0,.5)}
+  .pol-head{display:flex;justify-content:space-between;align-items:baseline;
+    padding:2px 2px 7px;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:#111}
   .pol-img{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a}
   .pol-img img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
   html[data-theme="dark"] .pol-img img{filter:grayscale(20%) contrast(1.05) brightness(.92)}
-  /* der breite untere Rand — das Polaroid-Merkmal */
-  .pol-cap{padding:13px 5px 20px}
-  .pol-t{font-size:15px;font-weight:800;text-transform:uppercase;line-height:1.1;
-    display:flex;align-items:center;gap:8px}
+  /* der untere Rand — das Polaroid-Merkmal, aber knapper als zuvor */
+  .pol-cap{padding:8px 2px 12px}
+  .pol-t{font-size:19px;font-weight:800;text-transform:uppercase;line-height:1.05;
+    display:flex;align-items:center;gap:7px}
   .cat-dot{width:9px;height:9px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
-  .pol-m{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
-    color:#5c5a55;margin-top:5px}
-  .pol-acts{position:absolute;top:8px;right:8px;display:flex;gap:6px}
-  .pol-acts .icon-btn{background:rgba(255,255,255,.9);width:32px;height:32px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
-  .pol-acts .icon-btn svg{width:18px;height:18px;stroke:#111}
+  .pol-m{font-size:12.5px;font-weight:400;letter-spacing:.1px;color:#3d3b37;margin-top:2px}
+  /* nur noch das Lesezeichen, Teilen ist raus (Input David 08.09.) */
+  .pol-acts{position:absolute;bottom:8px;right:8px}
+  .pol-acts .icon-btn{background:rgba(255,255,255,.92);width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.3)}
+  .pol-acts .icon-btn svg{width:17px;height:17px;stroke:#111}
   .pol-acts .icon-btn.saved svg{fill:#111}
   .sec-head{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
     color:var(--muted);padding:4px 4px 0}
-  .pol-run{display:inline-block;margin-top:7px;font-size:10px;font-weight:800;letter-spacing:.8px;
-    text-transform:uppercase;color:#fff;background:var(--accent);padding:3px 8px;border-radius:999px}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
   .feed.reveal .pol{animation:fadeUp .7s cubic-bezier(.22,1,.36,1) backwards}
   .meta{font-size:10.5px;font-weight:700;text-transform:uppercase;line-height:1.35;color:var(--fg)}
@@ -266,36 +260,38 @@
     padding:8px 16px;text-transform:uppercase}
   /* 2BE-Tab: zwei Bereiche — My Line Up / Editor's Choice (v11) */
   #view-saved{overflow:hidden;background:var(--bg)}
-  .tabbar{flex:none;display:flex;border-bottom:2px solid var(--fg);background:var(--bg)}
-  .tabbar .tab{flex:1;background:none;border:none;padding:15px 0 13px;font-family:inherit;
-    font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--faint);
-    cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
-  .tabbar .tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+  .tabbar{flex:none;display:flex;border-bottom:1px solid var(--hair);background:var(--bg)}
+  /* Input David 08.09.: kein violetter Unterstrich, aktiver Tab schlicht in Akzentfarbe */
+  .tabbar .tab{flex:1;background:none;border:none;padding:12px 0 10px;font-family:inherit;
+    font-size:12px;font-weight:800;letter-spacing:.6px;color:var(--faint);cursor:pointer}
+  .tabbar .tab.on{color:var(--accent)}
   .tabpane{flex:1;min-height:0;display:none;flex-direction:column}
   .tabpane.active{display:flex}
   #pane-lineup{overflow-y:auto}
   #pane-editors{overflow:hidden}
-  /* timeline */
-  .timeline{padding:24px 16px 24px 24px}
-  .tl-head{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
-  .tl-group{position:relative;padding-left:56px;padding-bottom:28px;border-left:2px solid var(--fg);margin-left:8px}
-  .tl-group:last-child{border-left-color:transparent}
-  .tl-date{position:absolute;left:-22px;top:-4px;width:44px;height:44px;border-radius:50%;
-    background:var(--bg);border:2px solid var(--fg);display:flex;align-items:center;
-    justify-content:center;font-size:11px;font-weight:800;text-align:center;line-height:1.1}
-  .tl-day{font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:10px;padding-top:6px;color:var(--muted)}
+  /* timeline — Datumsspalte links, Karten rechts (Input David 08.09.) */
+  .timeline{padding:14px 16px 20px}
+  .tl-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .tl-head b{font-size:15px;font-weight:800}
+  .tl-count{font-size:11px;color:var(--muted)}
+  .tl-group{display:flex;gap:12px;margin-bottom:14px}
+  .tl-date{flex:none;width:46px;font-size:11.5px;font-weight:700;line-height:1.25;
+    color:var(--muted);padding-top:6px}
+  .tl-group.tl-first .tl-date{color:var(--accent)}
+  .tl-cards{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
   .tl-card{
-    display:flex;align-items:center;gap:0;margin-bottom:10px;cursor:pointer;
-    background:#fff;color:#111;overflow:hidden;border-radius:3px;padding:7px 7px 7px 7px;
+    display:flex;align-items:center;gap:0;cursor:pointer;
+    background:#fff;color:#111;overflow:hidden;border-radius:2px;padding:6px;
     box-shadow:0 2px 9px rgba(0,0,0,.15);
   }
   html[data-theme="dark"] .tl-card{background:#d9d7d1;box-shadow:0 2px 9px rgba(0,0,0,.45)}
   .tl-card img{width:58px;height:58px;object-fit:cover;flex:none;display:block;
     filter:grayscale(20%) contrast(1.05)}
-  .tl-info{flex:1;min-width:0;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
-  .tl-t{font-size:13px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl-info{flex:1;min-width:0;padding:4px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .tl-t{font-size:14px;font-weight:800;text-transform:uppercase;line-height:1.1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tl-s{font-size:11px;text-transform:uppercase;color:#5c5a55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-m{font-size:10px;font-weight:700;color:#7a7873;text-transform:uppercase;letter-spacing:.5px}
+  .tl-m{font-size:11px;color:#5c5a55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tl-x{flex:none;background:none;border:none;cursor:pointer;padding:0 10px;display:flex;align-items:center}
   .tl-x svg{width:18px;height:18px;stroke:#111;fill:#111;stroke-width:2}
   /* profile */
@@ -344,6 +340,30 @@
     border:1.5px solid var(--fg);font-size:10px;font-weight:800;letter-spacing:.5px;
     padding:5px 10px;text-transform:uppercase;color:var(--fg);border-radius:999px}
   .f-hint{font-size:11px;color:var(--faint);line-height:1.5}
+  .f-field textarea{
+    border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);
+    font-family:inherit;font-size:16px;padding:12px 14px;border-radius:14px;width:100%;
+    min-height:96px;resize:vertical;line-height:1.45;
+  }
+  .f-field textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .f-count{font-size:10.5px;color:var(--faint);text-align:right;margin-top:-2px}
+  .f-count.over{color:#d40000;font-weight:700}
+  .f-group{border:1.5px solid var(--hair);border-radius:16px;padding:14px;display:flex;
+    flex-direction:column;gap:14px}
+  .f-group .f-glabel{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:var(--muted)}
+  .f-inline{display:flex;align-items:center;gap:9px}
+  .f-inline .f-pre{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--muted);
+    text-transform:uppercase;width:74px;flex:none}
+  .f-inline input{flex:1}
+  .px-warn{display:none;font-size:11px;line-height:1.5;color:#8a5a00;background:#fff5e0;
+    border-radius:12px;padding:9px 12px;margin-top:10px}
+  .px-warn.show{display:block}
+  html[data-theme="dark"] .px-warn{color:#ffd48a;background:#3a2f14}
+  /* Ticket-Knopf im Detail — der einzige Link, der Geld bewegt */
+  .d-ticket{display:block;width:100%;text-align:center;background:var(--accent);color:#fff;
+    border:2px solid var(--accent);font-weight:800;font-size:14px;letter-spacing:1px;padding:15px 0;
+    text-transform:uppercase;text-decoration:none;border-radius:999px}
   /* Einreichen in drei Schritten (v11) */
   .s-steps{display:flex;gap:8px;margin-bottom:2px}
   .s-step{flex:1;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;
@@ -398,6 +418,19 @@
     display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800}
   .s-done h3{font-size:20px;font-weight:800;text-transform:uppercase}
   .s-done p{font-size:13px;line-height:1.6;color:var(--muted);max-width:280px}
+  /* eigene Einreichungen */
+  #subs{position:absolute;inset:0;background:var(--bg);z-index:900;display:none;
+    flex-direction:column;overflow-y:auto}
+  #subs.open{display:flex}
+  .sub-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--hair)}
+  .sub-item:last-child{border-bottom:none}
+  .sub-th{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none;background:#8a8a8a}
+  .sub-info{flex:1;min-width:0}
+  .sub-t{font-size:13px;font-weight:800;text-transform:uppercase;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .sub-m{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:3px}
+  .sub-state{font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+    padding:3px 8px;border-radius:999px;background:var(--hair);color:var(--muted);flex:none}
   /* ===== Plakatsäule (verstecktes Schmuckstück — Tap aufs Logo) ===== */
   #saeule{position:absolute;inset:0;z-index:850;display:none;flex-direction:column;overflow:hidden}
   #saeule, #pane-editors{
@@ -499,23 +532,7 @@
     <div class="osm-credit" id="osmCredit"></div>
     <!-- Overlay am oberen Kartenrand: Live-Band, darunter die Filter-Chips (Datum-Pill vorne) -->
     <div class="map-top" id="mapTop">
-      <div class="map-head">
-        <div class="logo" onclick="openSaeule()">
-          <!-- Provisorische Plakatsaeulen-Silhouette. Das finale Logo kommt vom Designer -
-               dann NUR dieses <svg> ersetzen, sonst nichts anfassen. -->
-          <svg class="logo-sa" viewBox="0 0 24 34" aria-hidden="true">
-            <circle cx="12" cy="2.2" r="1.4"/>
-            <rect x="11.4" y="3" width="1.2" height="2.2"/>
-            <path d="M5.5 9a6.5 4.6 0 0 1 13 0z"/>
-            <rect x="4.6" y="9" width="14.8" height="1.8"/>
-            <rect x="6.2" y="10.8" width="11.6" height="17"/>
-            <rect x="5" y="27.8" width="14" height="1.6"/>
-            <rect x="3.8" y="29.4" width="16.4" height="3.2"/>
-          </svg>
-          <span>2BE</span>
-        </div>
-      </div>
-      <div class="ticker" id="ticker" style="display:none"></div>
+      <div class="map-scrim"></div>
       <div class="filters" id="filters"></div>
       <div class="datepop" id="datePop"></div>
     </div>
@@ -534,10 +551,9 @@
   <!-- 2BE: My Line Up / Editor's Choice -->
   <div class="view" id="view-saved">
     <div class="safe-top"></div>
-    <div class="ticker" id="tickerSaved" style="display:none"></div>
     <div class="tabbar">
       <button class="tab on" id="tab-lineup"  onclick="setSavedTab('lineup')"  data-i18n="tabLineup">My Line Up</button>
-      <button class="tab"    id="tab-editors" onclick="setSavedTab('editors')" data-i18n="tabEditors">Editor's Choice</button>
+      <button class="tab"    id="tab-editors" onclick="setSavedTab('editors')" data-i18n="tabEditors">Editor&#39;s Choice</button>
     </div>
     <div class="tabpane active" id="pane-lineup">
       <div class="timeline" id="timeline"></div>
@@ -568,10 +584,10 @@
           <button data-lang="fr" onclick="setLang('fr')">FR</button>
         </div>
       </div>
-      <div class="p-row"><span data-i18n="city">Stadt</span><span class="val">Bern</span></div>
-      <div class="p-row"><span data-i18n="notifications">Benachrichtigungen</span><span class="val" data-i18n="off">Aus</span></div>
       <div class="p-row" onclick="openSubmit()" style="cursor:pointer"><span data-i18n="submitEvent">Event einreichen</span><span class="val">→</span></div>
-      <div class="p-note" data-i18n="profileNote">Prototyp v10 — Favoriten, Likes und Erscheinungsbild werden lokal im Browser gespeichert.</div>
+      <div class="p-row" onclick="openSubs()" style="cursor:pointer"><span data-i18n="mySubs">Meine Einreichungen</span><span class="val" id="subsCount">0</span></div>
+      <div class="p-row" id="resetRow" onclick="resetLocal()" style="cursor:pointer"><span id="resetLabel" data-i18n="resetAll">Alles zurücksetzen</span><span class="val">↺</span></div>
+      <div class="p-note" data-i18n="profileNote">Prototyp v13 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.</div>
     </div>
   </div>
 
@@ -644,24 +660,38 @@
           <input type="text" id="subHost" data-i18n-ph="phHost" placeholder="Wer steht dahinter?" maxlength="50">
           <div class="f-err" id="err-host" data-i18n="errHost">Veranstalter fehlt</div>
         </div>
-        <div class="f-row">
-          <div class="f-field">
-            <div class="f-label"><span data-i18n="lblPrice">Eintritt</span> <span class="opt" data-i18n="optional">optional</span></div>
-            <input type="text" id="subPrice" data-i18n-ph="phPrice" placeholder="15.- oder FREE" maxlength="14">
-          </div>
-          <div class="f-field">
-            <div class="f-label"><span data-i18n="lblIg">Instagram</span> <span class="opt" data-i18n="optional">optional</span></div>
-            <input type="text" id="subIg" placeholder="@handle" maxlength="40">
-          </div>
+        <div class="f-field">
+          <div class="f-label"><span data-i18n="lblPrice">Eintritt</span> <span class="opt" data-i18n="optional">optional</span></div>
+          <input type="text" id="subPrice" data-i18n-ph="phPrice" placeholder="15.- oder FREE" maxlength="14">
         </div>
         <div class="f-field">
-          <div class="f-label"><span data-i18n="lblLink">Link</span> <span class="opt" data-i18n="optional">optional</span></div>
-          <input type="url" id="subLink" data-i18n-ph="phLink" placeholder="Instagram-Post, Ticketlink …" inputmode="url">
+          <div class="f-label"><span data-i18n="lblDesc">Beschreibung</span> <span class="opt" data-i18n="optional">optional</span></div>
+          <textarea id="subDesc" maxlength="320" oninput="countChars('subDesc','cnt-desc',320)"
+            data-i18n-ph="phDesc" placeholder="Worum geht es? Zwei, drei Sätze reichen."></textarea>
+          <div class="f-count" id="cnt-desc">0 / 320</div>
+        </div>
+        <div class="f-group">
+          <div class="f-glabel" data-i18n="lblLinks">Links</div>
+          <div class="f-inline"><span class="f-pre">Website</span>
+            <input type="url" id="subWeb" placeholder="https://…" inputmode="url"></div>
+          <div class="f-inline"><span class="f-pre">Instagram</span>
+            <input type="text" id="subIg" placeholder="@handle" maxlength="40"></div>
+          <div class="f-inline"><span class="f-pre">TikTok</span>
+            <input type="text" id="subTt" placeholder="@handle" maxlength="40"></div>
+          <div class="f-inline"><span class="f-pre" data-i18n="lblTicket">Tickets</span>
+            <input type="url" id="subTicket" placeholder="https://…" inputmode="url"></div>
+          <div class="f-hint" data-i18n="hintTicket">Der Ticketlink erscheint im Event als eigener Knopf.</div>
         </div>
         <div class="f-field">
           <div class="f-label" data-i18n="lblEmail">Kontakt-E-Mail</div>
           <input type="email" id="subEmail" data-i18n-ph="phEmail" placeholder="Für Rückfragen — wird nicht publiziert" inputmode="email">
           <div class="f-err" id="err-email" data-i18n="errEmail">Gültige E-Mail fehlt</div>
+        </div>
+        <div class="f-field">
+          <div class="f-label"><span data-i18n="lblNotes">Fragen oder Hinweise ans Team</span> <span class="opt" data-i18n="optional">optional</span></div>
+          <textarea id="subNotes" maxlength="400" oninput="countChars('subNotes','cnt-notes',400)"
+            data-i18n-ph="phNotes" placeholder="Etwas Besonderes zu beachten? Etwas unklar? Schreib es hier rein."></textarea>
+          <div class="f-count" id="cnt-notes">0 / 400</div>
         </div>
         <button class="rsvp-btn" onclick="subGo(2)" data-i18n="next">Weiter</button>
       </div>
@@ -687,6 +717,7 @@
             <input type="range" id="cropRange" min="100" max="400" value="100" oninput="cropSetZoom(this.value/100)">
             <button onclick="cropStep(1)">+</button>
           </div>
+          <div class="px-warn" id="pxWarn"></div>
           <div class="f-hint" style="margin-top:10px" data-i18n="cropHint">Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.</div>
           <button class="ghost" style="width:100%;margin-top:12px" onclick="$('flyerInput').click()" data-i18n="change">Ändern</button>
         </div>
@@ -720,6 +751,15 @@
     </div>
   </div>
 
+  <!-- EIGENE EINREICHUNGEN -->
+  <div id="subs">
+    <div class="s-head">
+      <button class="d-close" onclick="closeSubs()">✕</button>
+      <div class="s-htitle" data-i18n="mySubs">Meine Einreichungen</div>
+    </div>
+    <div class="s-body" id="subsBody"></div>
+  </div>
+
   <!-- PLAKATSÄULE (verstecktes Schmuckstück) -->
   <div id="saeule">
     <div class="sa-top">
@@ -732,6 +772,8 @@
     <div class="sa-scene" id="saScene"></div>
     <div class="sa-hint" data-i18n="saHint">Plakat antippen → Event · Telefonkabine → Event einreichen</div>
   </div>
+
+  <div class="ticker" id="ticker" style="display:none"></div>
 
   <nav>
     <button id="nav-find" class="active" onclick="show('find')">
@@ -765,7 +807,10 @@ const I18N = {
     appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
     language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
     submitEvent:"Event einreichen",
-    profileNote:"Prototyp v10 — Favoriten, Likes und Erscheinungsbild werden lokal im Browser gespeichert.",
+    profileNote:"Prototyp v13 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.",
+    mySubs:"Meine Einreichungen", subsEmpty:"Du hast noch nichts eingereicht.",
+    subPending:"In Prüfung", resetAll:"Alles zurücksetzen", resetSure:"Wirklich? Nochmal tippen",
+    resetDone:"Zurückgesetzt",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, Titel, Datum, Link — fertig in 30 Sekunden. Das Team prüft jede Einreichung, bevor sie live geht.",
     lblFlyer:"Flyer-Foto", flyerCta:"Foto aufnehmen oder hochladen", errFlyer:"Flyer-Foto fehlt",
@@ -785,6 +830,12 @@ const I18N = {
     lblZip:"PLZ & Ort", phZip:"z.B. 3011 Bern",
     lblHost:"Veranstalter", phHost:"Wer steht dahinter?", errHost:"Veranstalter fehlt",
     lblPrice:"Eintritt", phPrice:"15.- oder FREE", lblIg:"Instagram",
+    lblDesc:"Beschreibung", phDesc:"Worum geht es? Zwei, drei Sätze reichen.",
+    lblLinks:"Links", lblTicket:"Tickets", tickets:"Tickets",
+    hintTicket:"Der Ticketlink erscheint im Event als eigener Knopf.",
+    lblNotes:"Fragen oder Hinweise ans Team",
+    phNotes:"Etwas Besonderes zu beachten? Etwas unklar? Schreib es hier rein.",
+    pxWarn:"Dein Bild ist {w} × {h} Pixel. Unter {m} Pixel wird es in der Vollansicht sichtbar weich — einreichen kannst du es trotzdem.",
     cropHint:"Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.",
     prevList:"Listenansicht", prevFull:"Vollbild",
     prevHint:"So erscheint dein Event bei uns. Passt der Ausschnitt nicht, geh zurück und verschieb ihn.",
@@ -794,7 +845,7 @@ const I18N = {
     saHint:"Plakat antippen → Event · Tür → einreichen", doorSign:"GET LISTED", doorHint:"Tür öffnen · Event einreichen",
     emptyNothing:"Hier ist gerade nichts", emptyInCat:" in dieser Kategorie",
     emptyAdjust:"Kategorie oder Zeitraum anpassen.",
-    upcoming:"(Meine) nächsten Events",
+    upcoming:"Nächste Events", results:"{n} Ergebnisse",
     emptySavedTitle:"Noch nichts gespeichert.", emptySavedText:"Markiere Events im Feed mit dem Lesezeichen.",
     cantonOf:"Kanton {n}", toastArea:"Kanton {n}", lbHint:"Ganzes Bild · tippen zum Schliessen", liveNow:"● Läuft jetzt gerade", like:"Gefällt mir", liked:"Gefällt dir",
     secRunning:"Läuft gerade", secUpcoming:"Demnächst",
@@ -813,7 +864,10 @@ const I18N = {
     appearance:"Appearance", day:"Day", night:"Night",
     language:"Language", city:"City", notifications:"Notifications", off:"Off",
     submitEvent:"Submit event",
-    profileNote:"Prototype v10 — favourites, likes and appearance are stored locally in your browser.",
+    profileNote:"Prototype v13 — favourites, likes and submissions are stored locally in your browser.",
+    mySubs:"My submissions", subsEmpty:"You haven't submitted anything yet.",
+    subPending:"In review", resetAll:"Reset everything", resetSure:"Sure? Tap again",
+    resetDone:"Reset",
     navFind:"find", navProfile:"profile",
     subIntro:"Flyer, title, date, link — done in 30 seconds. The team reviews every submission before it goes live.",
     lblFlyer:"Flyer photo", flyerCta:"Take or upload a photo", errFlyer:"Flyer photo missing",
@@ -833,6 +887,12 @@ const I18N = {
     lblZip:"Postcode & town", phZip:"e.g. 3011 Bern",
     lblHost:"Host", phHost:"Who is behind it?", errHost:"Host missing",
     lblPrice:"Entry", phPrice:"15.- or FREE", lblIg:"Instagram",
+    lblDesc:"Description", phDesc:"What is it about? Two or three sentences are enough.",
+    lblLinks:"Links", lblTicket:"Tickets", tickets:"Tickets",
+    hintTicket:"The ticket link appears in the event as its own button.",
+    lblNotes:"Questions or notes for the team",
+    phNotes:"Anything special to know? Anything unclear? Write it here.",
+    pxWarn:"Your image is {w} × {h} pixels. Below {m} pixels it will look soft in the full view — you can still submit it.",
     cropHint:"Move and zoom the image until the crop is right — it applies to both views. Keep titles, faces and logos near the centre.",
     prevList:"List view", prevFull:"Full screen",
     prevHint:"This is how your event will look. If the crop is off, go back and adjust it.",
@@ -842,7 +902,7 @@ const I18N = {
     saHint:"Tap a poster → event · Door → get listed", doorSign:"GET LISTED", doorHint:"Open the door · submit an event",
     emptyNothing:"Nothing here", emptyInCat:" in this category",
     emptyAdjust:"Adjust the category or the time range.",
-    upcoming:"(My) Upcoming Events",
+    upcoming:"Upcoming Events", results:"{n} results",
     emptySavedTitle:"Nothing saved yet.", emptySavedText:"Bookmark events in the feed to add them here.",
     cantonOf:"Canton of {n}", toastArea:"Canton of {n}", lbHint:"Full image · tap to close", liveNow:"● Happening now", like:"Like", liked:"Liked",
     secRunning:"Happening now", secUpcoming:"Upcoming",
@@ -861,7 +921,10 @@ const I18N = {
     appearance:"Apparence", day:"Jour", night:"Nuit",
     language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
     submitEvent:"Proposer un événement",
-    profileNote:"Prototype v10 — favoris, likes et apparence sont stockés localement dans ton navigateur.",
+    profileNote:"Prototype v13 — favoris, likes et propositions sont stockés localement dans ton navigateur.",
+    mySubs:"Mes propositions", subsEmpty:"Tu n'as encore rien proposé.",
+    subPending:"En examen", resetAll:"Tout réinitialiser", resetSure:"Sûr ? Touche encore",
+    resetDone:"Réinitialisé",
     navFind:"explorer", navProfile:"profil",
     subIntro:"Flyer, titre, date, lien — prêt en 30 secondes. L'équipe vérifie chaque proposition avant sa publication.",
     lblFlyer:"Photo du flyer", flyerCta:"Prendre ou importer une photo", errFlyer:"Photo du flyer manquante",
@@ -881,6 +944,12 @@ const I18N = {
     lblZip:"NPA & localité", phZip:"p.ex. 3011 Bern",
     lblHost:"Organisateur", phHost:"Qui est derrière ?", errHost:"Organisateur manquant",
     lblPrice:"Entrée", phPrice:"15.- ou FREE", lblIg:"Instagram",
+    lblDesc:"Description", phDesc:"De quoi s'agit-il ? Deux ou trois phrases suffisent.",
+    lblLinks:"Liens", lblTicket:"Billets", tickets:"Billets",
+    hintTicket:"Le lien billetterie apparaît dans l'événement comme bouton séparé.",
+    lblNotes:"Questions ou remarques pour l'équipe",
+    phNotes:"Quelque chose de particulier ? Une question ? Écris-la ici.",
+    pxWarn:"Ton image fait {w} × {h} pixels. En dessous de {m} pixels elle sera floue en plein écran — tu peux quand même l'envoyer.",
     cropHint:"Déplace et zoome l'image jusqu'à ce que le cadrage soit bon — il vaut pour les deux vues. Garde titres, visages et logos vers le centre.",
     prevList:"Vue liste", prevFull:"Plein écran",
     prevHint:"Voilà comment ton événement apparaîtra. Si le cadrage ne va pas, reviens en arrière.",
@@ -890,7 +959,7 @@ const I18N = {
     saHint:"Touche une affiche → événement · Porte → proposer", doorSign:"GET LISTED", doorHint:"Ouvre la porte · propose un événement",
     emptyNothing:"Rien ici", emptyInCat:" dans cette catégorie",
     emptyAdjust:"Ajuste la catégorie ou la période.",
-    upcoming:"(Mes) prochains événements",
+    upcoming:"Prochains événements", results:"{n} résultats",
     emptySavedTitle:"Rien d'enregistré pour l'instant.", emptySavedText:"Ajoute des événements avec le marque-page dans le feed.",
     cantonOf:"Canton de {n}", toastArea:"Canton de {n}", lbHint:"Image entière · touche pour fermer", liveNow:"● En ce moment", like:"J'aime", liked:"Aimé",
     secRunning:"En ce moment", secUpcoming:"Prochainement",
@@ -913,6 +982,11 @@ const DAYS = {
   de:["SONNTAG","MONTAG","DIENSTAG","MITTWOCH","DONNERSTAG","FREITAG","SAMSTAG"],
   en:["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"],
   fr:["DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"]
+};
+const DAYS_SHORT = {
+  de:["SO","MO","DI","MI","DO","FR","SA"],
+  en:["SUN","MON","TUE","WED","THU","FRI","SAT"],
+  fr:["DI","LU","MA","ME","JE","VE","SA"]
 };
 const MONTHS = {
   de:["JANUAR","FEBRUAR","MÄRZ","APRIL","MAI","JUNI","JULI","AUGUST","SEPTEMBER","OKTOBER","NOVEMBER","DEZEMBER"],
@@ -953,74 +1027,74 @@ function makeEvent(o){
 
 const EVENTS = [
  {id:1, title:"MATO : SOUSSOL", sub:"SOUNDSYSTEM", tags:["music"], offset:0, h:new Date().getHours()-1, dur:6,
-  addr1:"KÄFIGTURM 43", addr2:"3011 BERN", price:"15.-", lat:46.9481, lng:7.4444, city:"bern", kanton:"BE",
+  addr1:"Käfigturm 43", addr2:"3011 Bern", price:"15.-", lat:46.9481, lng:7.4444, city:"bern", kanton:"BE",
   desc:"Soundsystem-Nacht im Untergeschoss. Dub, Bass und ein Raum, der bis fünf Uhr morgens nicht leer wird.",
-  ig:"https://www.instagram.com/2be.app", seed:"matosound"},
+  ig:"https://www.instagram.com/2be.app", ticket:"https://www.petzi.ch", seed:"matosound"},
  {id:2, title:"ZAHYR FEST", sub:"OPEN AIR", tags:["music"], offset:4, h:22, dur:5,
-  addr1:"MONBIJOUPARK", addr2:"3007 BERN", price:"FREE", lat:46.9412, lng:7.4342, city:"bern", kanton:"BE",
+  addr1:"Monbijoupark", addr2:"3007 Bern", price:"FREE", lat:46.9412, lng:7.4342, city:"bern", kanton:"BE",
   desc:"Open Air unter dem Pavillon im Monbijoupark. Lokale DJs, freier Eintritt, solange der Park mitmacht.",
   ig:"https://www.instagram.com/2be.app", seed:"zahyr"},
  {id:3, title:"SCRYPT", sub:"POP UP", tags:["fashion"], offset:5, h:14, dur:4,
-  addr1:"EIGERPLATZ 5", addr2:"3007 BERN", price:null, lat:46.9369, lng:7.4297, city:"bern", kanton:"BE",
+  addr1:"Eigerplatz 5", addr2:"3007 Bern", price:null, lat:46.9369, lng:7.4297, city:"bern", kanton:"BE",
   desc:"Berner Streetwear-Label mit neuer Kollektion. Ein Tag, ein Raum, limitierte Stückzahlen.",
   ig:"https://www.instagram.com/2be.app", seed:"scrypt2"},
  {id:4, title:"VÔN CAMPBELL", sub:"POP UP", tags:["fashion"], offset:5, h:14, dur:4,
-  addr1:"KRAMGASSE 12", addr2:"3011 BERN", price:null, lat:46.9479, lng:7.4515, city:"bern", kanton:"BE",
+  addr1:"Kramgasse 12", addr2:"3011 Bern", price:null, lat:46.9479, lng:7.4515, city:"bern", kanton:"BE",
   desc:"Pop-up in der Altstadt — Kollektion, Musik und der Hund ist auch dabei.",
   ig:"https://www.instagram.com/2be.app", seed:"voncamp"},
  {id:5, title:"GROSSE HALLE", sub:"FLOHMI", tags:["other"], offset:6, h:10, dur:6,
-  addr1:"NEUBRÜCKSTRASSE 8", addr2:"3012 BERN", price:"FREE", lat:46.9528, lng:7.4389, city:"bern", kanton:"BE",
+  addr1:"Neubrückstrasse 8", addr2:"3012 Bern", price:"FREE", lat:46.9528, lng:7.4389, city:"bern", kanton:"BE",
   desc:"Der Flohmi in der Grossen Halle. Platten, Kleider, Fotos, Zeug das man nicht sucht und trotzdem heimnimmt.",
   ig:"https://www.instagram.com/2be.app", seed:"flohmi"},
  {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9,
  h:12, dur:6,
-  addr1:"SULGENAUWEG 3", addr2:"3007 BERN", price:null, lat:46.9387, lng:7.4407, city:"bern", kanton:"BE",
+  addr1:"Sulgenauweg 3", addr2:"3007 Bern", price:null, lat:46.9387, lng:7.4407, city:"bern", kanton:"BE",
   desc:"Summer Sale im Hinterhof. Archive-Pieces und Kaffee.",
   ig:"https://www.instagram.com/2be.app", seed:"snabba"},
  {id:7, title:"MIDAS", sub:"OPENING POP UP", tags:["other"], offset:10, h:17, dur:5,
-  addr1:"SPITALGASSE 2", addr2:"3011 BERN", price:null, lat:46.9477, lng:7.4408, city:"bern", kanton:"BE",
+  addr1:"Spitalgasse 2", addr2:"3011 Bern", price:null, lat:46.9477, lng:7.4408, city:"bern", kanton:"BE",
   desc:"Eröffnung des neuen Pop-up-Spaces an der Spitalgasse. Drinks ab 17 Uhr.",
   ig:"https://www.instagram.com/2be.app", seed:"midas"},
  {id:8, title:"POPPYST4R", sub:"POP UP", tags:["art"], offset:13, h:17, dur:5,
-  addr1:"BELLEVUESTRASSE 5", addr2:"3095 SPIEGEL", price:null, lat:46.9262, lng:7.4312, city:"bern", kanton:"BE",
+  addr1:"Bellevuestrasse 5", addr2:"3095 Spiegel", price:null, lat:46.9262, lng:7.4312, city:"bern", kanton:"BE",
   desc:"Kunst- und Fashion-Crossover im Spiegel. Ein Abend, danach ist es wieder weg.",
   ig:"https://www.instagram.com/2be.app", seed:"poppy"},
  // --- Pop-ups: laufen ueber Wochen statt einen Abend (v10) ---
  {id:9, title:"ATELIER 3011", sub:"POP-UP STORE", tags:["fashion"], art:"popup",
   offset:-12, endOffset:33, h:12, dur:7,
-  addr1:"RATHAUSGASSE 22", addr2:"3011 BERN", price:null, lat:46.9484, lng:7.4520, city:"bern", kanton:"BE",
+  addr1:"Rathausgasse 22", addr2:"3011 Bern", price:null, lat:46.9484, lng:7.4520, city:"bern", kanton:"BE",
   desc:"Sechs Berner Labels teilen sich bis in den Herbst einen Raum in der Rathausgasse. Jede Woche wechselt die Auslage.",
   ig:"https://www.instagram.com/2be.app", seed:"atelier3011"},
  {id:10, title:"GLASHAUS", sub:"CONCEPT STORE", tags:["art"], art:"popup",
   offset:-4, endOffset:8, h:11, dur:8,
-  addr1:"MARZILISTRASSE 4", addr2:"3005 BERN", price:null, lat:46.9425, lng:7.4457, city:"bern", kanton:"BE",
+  addr1:"Marzilistrasse 4", addr2:"3005 Bern", price:null, lat:46.9425, lng:7.4457, city:"bern", kanton:"BE",
   desc:"Druckgrafik, Keramik und Editionen von zwoelf Kunstschaffenden — zwei Wochen im alten Glashaus am Marzili.",
   ig:"https://www.instagram.com/2be.app", seed:"glashaus"},
  {id:11, title:"KIOSK 44", sub:"WINTER POP-UP", tags:["other"], art:"popup",
   offset:12, endOffset:74, h:13, dur:6,
-  addr1:"LORRAINESTRASSE 44", addr2:"3013 BERN", price:null, lat:46.9556, lng:7.4432, city:"bern", kanton:"BE",
+  addr1:"Lorrainestrasse 44", addr2:"3013 Bern", price:null, lat:46.9556, lng:7.4432, city:"bern", kanton:"BE",
   desc:"Der Winterkiosk in der Lorraine: Bücher, Platten, heisse Getränke und jeden Donnerstag ein Gast hinter der Theke.",
   ig:"https://www.instagram.com/2be.app", seed:"kiosk44"},
  // --- ausserhalb Bern, damit die Kantonsauswahl etwas zu zeigen hat ---
  {id:12, title:"NEUBAD", sub:"HALLENBAD SESSIONS", tags:["music"], offset:3, h:21, dur:6,
-  addr1:"BIREGGSTRASSE 36", addr2:"6003 LUZERN", price:"20.-", lat:47.0398, lng:8.2942,
+  addr1:"Bireggstrasse 36", addr2:"6003 Luzern", price:"20.-", lat:47.0398, lng:8.2942,
   city:"luzern", kanton:"LU",
   desc:"Im leeren Becken des alten Hallenbads. Bass von den Kacheln, Bar am Beckenrand.",
   ig:"https://www.instagram.com/2be.app", seed:"neubad"},
  {id:13, title:"BRUCHQUARTIER", sub:"OPEN STUDIOS", tags:["art"], art:"popup",
   offset:-2, endOffset:16, h:14, dur:6,
-  addr1:"BRUCHSTRASSE 24", addr2:"6003 LUZERN", price:"FREE", lat:47.0459, lng:8.2999,
+  addr1:"Bruchstrasse 24", addr2:"6003 Luzern", price:"FREE", lat:47.0459, lng:8.2999,
   city:"luzern", kanton:"LU",
   desc:"Vierzehn Ateliers im Bruch öffnen ihre Türen. Zwei Wochen lang, jeden Nachmittag.",
   ig:"https://www.instagram.com/2be.app", seed:"bruchq"},
  {id:14, title:"ZOLLHAUS", sub:"LATE NIGHT", tags:["music"], offset:2, h:23, dur:6,
-  addr1:"ZOLLSTRASSE 121", addr2:"8005 ZÜRICH", price:"25.-", lat:47.3835, lng:8.5327,
+  addr1:"Zollstrasse 121", addr2:"8005 Zürich", price:"25.-", lat:47.3835, lng:8.5327,
   city:"zuerich", kanton:"ZH",
   desc:"Neue Reihe im Zollhaus. Drei Räume, drei Tempi, offener Innenhof für die Pause.",
-  ig:"https://www.instagram.com/2be.app", seed:"zollhaus"},
+  ig:"https://www.instagram.com/2be.app", ticket:"https://www.petzi.ch", seed:"zollhaus"},
  {id:15, title:"KREIS VIER", sub:"SAMPLE SALE", tags:["fashion"], art:"popup",
   offset:5, endOffset:12, h:11, dur:8,
-  addr1:"ANKERSTRASSE 16", addr2:"8004 ZÜRICH", price:null, lat:47.3757, lng:8.5258,
+  addr1:"Ankerstrasse 16", addr2:"8004 Zürich", price:null, lat:47.3757, lng:8.5258,
   city:"zuerich", kanton:"ZH",
   desc:"Musterteile und Restposten von sechs Zürcher Labels. Eine Woche, dann ist der Raum wieder leer.",
   ig:"https://www.instagram.com/2be.app", seed:"kreis4"},
@@ -1240,7 +1314,15 @@ function setTiles(){
   $("osmCredit").innerHTML = esri
     ? `© <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a>`
     : `© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>`;
-  tiles = L.tileLayer(url, {maxZoom:19, maxNativeZoom: esri ? 16 : 19}).addTo(map);
+  // detectRetina holt auf dem iPhone die naechsthoehere Zoomstufe und zeigt sie halb so gross —
+  // doppelte Schaerfe ohne @2x-Kacheln. Esris karge Karte endet bei Stufe 16, darum deckelt
+  // maxZoom bei 17: eine Stufe Hochskalierung ist vertretbar, drei waeren Matsch.
+  tiles = L.tileLayer(url, {
+    detectRetina: true,
+    maxZoom: esri ? 17 : 19,
+    maxNativeZoom: esri ? 16 : 19
+  }).addTo(map);
+  map.setMaxZoom(esri ? 17 : 19);
   tileErrors = 0;
   tiles.on("tileerror", () => {
     if(tileSource !== "esri") return;
@@ -1316,21 +1398,24 @@ function renderFilters(){
 // Eine Polaroid-Card: Bild 1:1 im Rahmen, unten breiter Rand mit Titel / Datum · Venue
 function polCard(e,i){
   const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
+  const dnum  = d => `${_p(d.getDate())}.${_p(d.getMonth()+1)}.`;
+  const head  = e.art==="popup"
+    ? `${dnum(e.start)} – ${dnum(e.end)}`
+    : `${DAYS_SHORT[LANG][e.start.getDay()]} ${dnum(e.start)}`;
   return `
     <article class="pol" id="card-${e.id}" onclick="openDetail(${e.id})" ${firstFeedRender?`style="animation-delay:${.15+i*.08}s"`:""}>
+      <div class="pol-head"><span>${head}</span><span>${e.time}</span></div>
       <div class="pol-img">
         <img src="${img(e,700)}" alt="" loading="lazy">
         ${e.price?`<div class="price-tag">${e.price}</div>`:""}
         ${isLive(e)?`<div class="live-tag">LIVE</div>`:(soonLabel(e)?`<div class="soon-tag">${soonLabel(e)}</div>`:"")}
         <div class="pol-acts">
-          <button class="icon-btn" onclick="event.stopPropagation();share(${e.id})" title="${t('tShare')}">${shSvg}</button>
           <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tSave')}">${bmSvg}</button>
         </div>
       </div>
       <div class="pol-cap">
         <div class="pol-t"><span class="cat-dot" style="background:${color}"></span>${e.title}</div>
-        <div class="pol-m">${e.date} · ${e.addr1}</div>
-        ${runBadge(e)?`<div class="pol-run">${runBadge(e)}</div>`:""}
+        <div class="pol-m">${e.addr1}${e.addr2?", "+e.addr2:""}</div>
       </div>
     </article>`;
 }
@@ -1405,7 +1490,7 @@ function tickerItem(e){
   return `<span class="ticker-item" onclick="openDetail(${e.id})"><span class="tdot"></span>` +
          `LIVE — ${e.title} · ${e.addr1} · ${catLabel(e.tags[0])}</span>`;
 }
-const TICKER_BOXES = ["ticker","tickerSaved"];   // Kartenansicht und 2BE-Tab
+const TICKER_BOXES = ["ticker"];   // ein Band, unten ueber der Navigation
 function renderTicker(){
   const live = EVENTS.filter(isLive);
   if(tickerTimer){ clearInterval(tickerTimer); tickerTimer = null; }
@@ -1432,6 +1517,7 @@ function renderTicker(){
 function goBack(){
   if($("lightbox").classList.contains("open")) return closeFlyer();
   if($("submit").classList.contains("open"))   return closeSubmit();
+  if($("subs").classList.contains("open"))     return closeSubs();
   if($("saeule").classList.contains("open"))   return closeSaeule();
   if($("detail").classList.contains("open"))   return closeDetail();
   if($("datePop").classList.contains("open"))  return closeDatePop();
@@ -1467,29 +1553,32 @@ function initTicker(){
 
 function renderTimeline(){
   const saved = EVENTS.filter(e=>state.saved.has(e.id)).sort((a,b)=>a.start-b.start);
+  const head = n => `<div class="tl-head"><b>${t('upcoming')}</b><span class="tl-count">${t('results').replace("{n}", n)}</span></div>`;
   if(!saved.length){
-    $("timeline").innerHTML = `<div class="tl-head">${t('upcoming')}</div>
-      <div class="empty">${t('emptySavedTitle')}<br>${t('emptySavedText')}</div>`;
+    $("timeline").innerHTML = head(0) +
+      `<div class="empty">${t('emptySavedTitle')}<br>${t('emptySavedText')}</div>`;
     return;
   }
   const byDate = {};
   saved.forEach(e => (byDate[e.sort]=byDate[e.sort]||[]).push(e));
-  $("timeline").innerHTML =
-    Object.keys(byDate).sort().map(d=>{
+  $("timeline").innerHTML = head(saved.length) +
+    Object.keys(byDate).sort().map((d,gi)=>{
       const evs = byDate[d];
       const dnum = d.slice(8,10)+"."+d.slice(5,7)+".";
-      return `<div class="tl-group">
-        <div class="tl-date">${dnum}</div>
-        <div class="tl-day">${evs[0].day}</div>
+      return `<div class="tl-group${gi===0?" tl-first":""}">
+        <div class="tl-date">${dnum}<br>${DAYS_SHORT[LANG][evs[0].start.getDay()]}</div>
+        <div class="tl-cards">
         ${evs.map(e=>`<div class="tl-card" onclick="openDetail(${e.id})">
           <img src="${img(e,200)}" alt="" loading="lazy">
           <div class="tl-info">
             <div class="tl-t">${e.title}</div>
             <div class="tl-s">${e.sub}</div>
-            <div class="tl-m">${e.time.split(" ")[0]} · ${e.addr1}</div>
+            <div class="tl-m">${e.addr1}${e.addr2?", "+e.addr2:""}</div>
+            <div class="tl-m">${e.time}</div>
           </div>
           <button class="tl-x" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tRemove')}">${bmSvg}</button>
         </div>`).join("")}
+        </div>
       </div>`;
     }).join("");
 }
@@ -1529,6 +1618,7 @@ function renderDetail(id){
           ${heartSvg}<span>${count}</span>
         </button>
       </div>
+      ${e.ticket?`<a class="d-ticket" href="${e.ticket}" target="_blank" rel="noopener">${t('tickets')}</a>`:""}
       <div class="d-actions">
         <button class="${saved?'saved-state':'primary'}" onclick="toggleSave(${e.id});renderDetail(${e.id})">${saved?t('saved'):t('save')}</button>
         <button onclick="share(${e.id})">${t('share')}</button>
@@ -1551,7 +1641,9 @@ function initDetailMap(e){
   dmap = L.map(el, {zoomControl:false, attributionControl:false, dragging:false,
     scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false, boxZoom:false,
     keyboard:false, tap:false}).setView([e.lat, e.lng], 15);
-  L.tileLayer(currentTheme()==="dark"?TILE_DARK:TILE_LIGHT, {maxZoom:19}).addTo(dmap);
+  const dark = currentTheme()==="dark", esri = tileSource==="esri";
+  L.tileLayer(esri ? (dark?TILE_ESRI_DARK:TILE_ESRI_LIGHT) : TILE_OSM,
+    {detectRetina:true, maxZoom:19, maxNativeZoom: esri ? 16 : 19}).addTo(dmap);
   const color = CATCOLORS[e.tags[0]] || CATCOLORS.other;
   L.marker([e.lat, e.lng], {interactive:false, icon:L.divIcon({className:"",
     html:`<div class="pin ${e.art==='popup'?'popup':''}" style="background:${color}"></div>`,
@@ -1862,6 +1954,13 @@ function markErr(id, errId, bad){
   return bad;
 }
 
+function countChars(id, outId, max){
+  const v = $(id).value.length;
+  const el = $(outId);
+  el.textContent = v + " / " + max;
+  el.classList.toggle("over", v >= max);
+}
+
 // ---- Bild und Ausschnitt ----
 function flyerPicked(inp){
   const f = inp.files && inp.files[0]; if(!f) return;
@@ -1887,7 +1986,17 @@ function initCrop(){
   crop.ox = 0; crop.oy = 0; crop.z = 1;
   $("cropRange").value = 100;
   applyCrop();
+  // Warnen statt blockieren: ein weichgezeichneter Flyer ist besser als gar keiner
+  const w = im.naturalWidth || 0, h = im.naturalHeight || 0;
+  const warn = $("pxWarn");
+  if(w && h && Math.min(w, h) < MIN_PX){
+    warn.textContent = t("pxWarn").replace("{w}", w).replace("{h}", h).replace("{m}", MIN_PX);
+    warn.classList.add("show");
+  } else {
+    warn.classList.remove("show");
+  }
 }
+const MIN_PX = 1000;   // kürzere Kante; darunter wird die Vollansicht sichtbar weich
 function clampCrop(){
   const mx = Math.max(0, (crop.w*crop.z - crop.box)/2);
   const my = Math.max(0, (crop.h*crop.z - crop.box)/2);
@@ -1954,10 +2063,14 @@ function subValues(){
     time:  tf ? (tf + (tt ? " – " + tt : "")) : "",
     addr1: $("subAddr1").value.trim() || "—",
     addr2: $("subAddr2").value.trim() || "",
-    price: $("subPrice").value.trim(),
-    ig:    $("subIg").value.trim(),
-    link:  $("subLink").value.trim(),
-    email: $("subEmail").value.trim()
+    price:  $("subPrice").value.trim(),
+    desc:   $("subDesc").value.trim(),
+    web:    $("subWeb").value.trim(),
+    ig:     $("subIg").value.trim(),
+    tt:     $("subTt").value.trim(),
+    ticket: $("subTicket").value.trim(),
+    notes:  $("subNotes").value.trim(),
+    email:  $("subEmail").value.trim()
   };
 }
 function setPrevTab(w){
@@ -1995,7 +2108,9 @@ function renderPreview(){
           <div class="meta">${d.art==="popup" ? d.rangeLabel : (d.day+"<br>"+d.dateLabel)}${d.time?`<br><span class="light">${d.time}</span>`:""}</div>
           <div class="meta right">${d.addr1}${d.addr2?"<br>"+d.addr2:""}</div>
         </div>
+        ${d.desc?`<div class="d-desc">${d.desc.replace(/</g,"&lt;")}</div>`:""}
         <div class="d-tags"><span class="d-tag">${catLabel(d.cat)}</span>${d.art==="popup"?`<span class="d-tag">${t("artPopup")}</span>`:""}</div>
+        ${d.ticket?`<div class="prev-inert"><span class="d-ticket">${t("tickets")}</span></div>`:""}
         <div class="like-row prev-inert"><button class="like-btn">${heartSvg}<span>0</span></button></div>
         <div class="d-actions prev-inert">
           <button class="primary">${t("save")}</button>
@@ -2019,11 +2134,13 @@ function submitEvent(){
   // Prototyp: lokal ablegen — später INSERT in Supabase-Tabelle `submissions` (Status: pending)
   try{
     const subs = JSON.parse(localStorage.getItem("2be_submissions")||"[]");
-    subs.push({...d, crop:{ox:crop.ox/crop.box, oy:crop.oy/crop.box, z:crop.z}, ts:new Date().toISOString()});
+    subs.push({...d, img:flyerData, crop:{ox:crop.ox/crop.box, oy:crop.oy/crop.box, z:crop.z},
+               ts:new Date().toISOString()});
     localStorage.setItem("2be_submissions", JSON.stringify(subs));
   }catch(e){}
   $("submitForm").style.display = "none";
   $("submitDone").classList.add("show");
+  renderSubsCount();
 }
 function resetSubmit(){
   flyerData = null; subCat = null; subArt = "event"; prevTab = "list";
@@ -2031,12 +2148,58 @@ function resetSubmit(){
   $("flyerBox").style.display = "flex";
   $("flyerBox").classList.remove("err");
   $("cropWrap").style.display = "none";
-  ["subTitle","subDate","subDateEnd","subTime","subTimeEnd","subAddr1","subAddr2",
-   "subHost","subPrice","subIg","subLink","subEmail"].forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
+  ["subTitle","subDate","subDateEnd","subTime","subTimeEnd","subAddr1","subAddr2","subHost",
+   "subPrice","subDesc","subWeb","subIg","subTt","subTicket","subNotes","subEmail"]
+    .forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
+  countChars("subDesc","cnt-desc",320); countChars("subNotes","cnt-notes",400);
+  $("pxWarn").classList.remove("show");
   document.querySelectorAll(".f-err").forEach(e=>e.classList.remove("show"));
   $("submitDone").classList.remove("show");
   $("submitForm").style.display = "flex";
   renderPicks(); setPrevTab("list"); subGo(1);
+}
+
+// ================= Eigene Einreichungen =================
+function loadSubs(){
+  try{ return JSON.parse(localStorage.getItem("2be_submissions")||"[]"); }catch(e){ return []; }
+}
+function renderSubsCount(){
+  const el = $("subsCount"); if(el) el.textContent = loadSubs().length;
+}
+function openSubs(){
+  const subs = loadSubs().slice().reverse();
+  $("subsBody").innerHTML = subs.length ? subs.map(x => `
+    <div class="sub-item">
+      ${x.img ? `<img class="sub-th" src="${x.img}" alt="">` : `<div class="sub-th"></div>`}
+      <div class="sub-info">
+        <div class="sub-t">${x.title||"—"}</div>
+        <div class="sub-m">${x.dateLabel||""}${x.addr1?" · "+x.addr1:""}</div>
+      </div>
+      <span class="sub-state">${t("subPending")}</span>
+    </div>`).join("")
+    : `<div class="empty">${t("subsEmpty")}</div>`;
+  $("subs").classList.add("open");
+}
+function closeSubs(){ $("subs").classList.remove("open"); }
+
+// Zuruecksetzen in zwei Schritten statt mit einem Systemdialog
+let resetArmed = 0;
+function resetLocal(){
+  const label = $("resetLabel");
+  if(performance.now() > resetArmed){
+    resetArmed = performance.now() + 4000;
+    label.textContent = t("resetSure");
+    setTimeout(() => { if(performance.now() > resetArmed - 50) label.textContent = t("resetAll"); }, 4000);
+    return;
+  }
+  resetArmed = 0;
+  ["2be_saved","2be_likes","2be_rsvp","2be_submissions"].forEach(k => {
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+  state.saved = new Set(); state.likes = new Set();
+  label.textContent = t("resetAll");
+  renderAll(); renderSubsCount();
+  toast(t("resetDone"));
 }
 
 // ================= Plakatsäule (3D — three.js Colonne Morris) =================
@@ -2354,7 +2517,7 @@ function setSavedTab(w){
 }
 
 function show(v){
-  state.view=v; closeDetail(); closeSubmit(); closeDatePop(); closeFlyer();
+  state.view=v; closeDetail(); closeSubmit(); closeSubs(); closeDatePop(); closeFlyer();
   if(mapCardId !== null){ mapCardId = null; $("mapcard").classList.remove("open"); }
   $("saeule").classList.remove("open");
   document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
@@ -2383,6 +2546,7 @@ initCropInput();
 setSheet("map", false);   // Start: volle Kartenansicht (v10)
 locateUser();
 renderAll();
+renderSubsCount();
 // Geteilter Link? Direkt das Event öffnen
 const sharedId = Number(new URLSearchParams(location.search).get("event"));
 if(sharedId && EVENTS.some(e=>e.id===sharedId)) openDetail(sharedId);
