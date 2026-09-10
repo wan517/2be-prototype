@@ -31,6 +31,7 @@
     --faint:#999999;       /* sehr dezent */
     --hair:#DEDBD3;        /* Haarlinien, warm */
     --faded:rgba(253,252,248,.85); /* Karten-Boxen */
+    --font-addr:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; /* Adressen */
   }
   html[data-theme="dark"]{
     --bg:#1c1c1e;
@@ -66,7 +67,7 @@
   /* Statusleisten-Zone in den Ansichten ohne Karte - Violett, damit die weisse Systemschrift traegt */
   .safe-top{flex:none;height:env(safe-area-inset-top, 0px);background:var(--accent)}
   .view-title{flex:none;padding:14px 16px 12px;font-size:19px;font-weight:800;
-    text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--fg);background:var(--bg)}
+    text-transform:uppercase;letter-spacing:-.02em;border-bottom:1px solid var(--hair);background:var(--bg)}
   .view{flex:1;overflow-y:auto;display:none;flex-direction:column}
   .view.active{display:flex}
   #view-find{overflow:hidden;position:relative}
@@ -101,7 +102,7 @@
   /* Bottom Sheet mit Event-Liste */
   #sheet{
     position:absolute;left:0;right:0;top:0;height:100%;z-index:700;
-    background:var(--bg);border-top:2px solid var(--fg);
+    background:var(--bg);border-top:1px solid var(--hair);
     border-radius:22px 22px 0 0;
     display:flex;flex-direction:column;will-change:transform;
   }
@@ -118,7 +119,8 @@
     100%{box-shadow:0 0 0 0 rgba(125,57,235,0)}
   }
   /* Map-Pins — kompakt */
-  .pin{width:14px;height:14px;border-radius:50%;border:2px solid var(--fg);box-sizing:border-box}
+  .pin{width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);box-sizing:border-box;
+    box-shadow:0 1px 3px rgba(0,0,0,.35)}
   /* Pop-up-Orte sind abgerundete Quadrate, einmalige Events bleiben Kreise (v10) */
   .pin.popup{border-radius:4px}
   .pin.live{width:18px;height:18px;background:var(--accent);border-color:var(--bg);
@@ -134,11 +136,21 @@
   #sheet.s-half .sheet-body{padding-bottom:45%}
   #sheet.s-list .sheet-body{padding-bottom:118px}
   #sheet.s-map .sheet-body{padding-bottom:0}
-  /* Datum-Filter: Pill in der Chip-Zeile, Popover haengt an .map-top —
-     NICHT in .filters, denn dessen overflow-x:auto wuerde es abschneiden. */
+  /* Zwei Knöpfe rechts auf der Karte: oben der Kanton, darunter der Zeitraum */
+  .map-side{position:absolute;right:12px;pointer-events:auto;overflow:hidden;
+    top:calc(env(safe-area-inset-top, 0px) + 12px);
+    background:var(--bg);border:1px solid var(--fg);border-radius:14px;
+    box-shadow:0 3px 12px rgba(0,0,0,.22)}
+  .msq{display:flex;width:46px;height:46px;align-items:center;justify-content:center;
+    background:var(--bg);border:none;cursor:pointer;color:var(--fg);font-family:inherit;padding:0}
+  .msq + .msq{border-top:1px solid var(--hair)}
+  .msq svg{width:23px;height:23px}
+  .msq.on{background:var(--accent);color:#fff}
+  .area-svg{width:27px;height:27px;fill:currentColor;stroke:none}
+  /* Zeitraum-Popover haengt unter den Knöpfen, rechtsbuendig */
   .datepop{
-    position:absolute;top:calc(100% + 2px);left:14px;min-width:168px;z-index:20;
-    background:var(--bg);border:2px solid var(--fg);border-radius:16px;overflow:hidden;display:none;
+    position:absolute;top:calc(env(safe-area-inset-top, 0px) + 106px);right:12px;min-width:168px;z-index:20;
+    background:var(--bg);border:1px solid var(--fg);border-radius:16px;overflow:hidden;display:none;
     box-shadow:0 10px 28px rgba(0,0,0,.18);
   }
   .datepop.open{display:block}
@@ -149,17 +161,17 @@
   }
   .datepop button + button{border-top:1px solid var(--hair)}
   .datepop button.on{background:var(--accent);color:#fff}
-  /* filters — liegen seit v10 auf der Karte, nicht mehr im Sheet */
+  /* filters — sitzen in der Kopfzeile der Liste, nicht mehr auf der Karte.
+     In der Peek-Position ragt genau dieser Streifen über den unteren Kartenrand. */
   .filters{
-    display:flex;gap:8px;padding:10px 14px;overflow-x:auto;flex:none;
-    scrollbar-width:none;background:transparent;
+    display:flex;gap:7px;padding:2px 14px 12px;overflow-x:auto;flex:none;
+    scrollbar-width:none;background:var(--bg);
   }
   .filters::-webkit-scrollbar{display:none}
   .chip{
-    flex:none;border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
-    font-weight:700;letter-spacing:.5px;padding:7px 14px;cursor:pointer;
+    flex:none;border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
+    font-weight:700;letter-spacing:.3px;padding:7px 15px;cursor:pointer;
     text-transform:uppercase;font-family:inherit;border-radius:999px;
-    box-shadow:0 2px 8px rgba(0,0,0,.16);
   }
   .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   /* Standortpunkt des Nutzers */
@@ -175,22 +187,21 @@
     box-shadow:0 3px 14px rgba(0,0,0,.16);overflow:hidden}
   html[data-theme="dark"] .pol{background:#d9d7d1;box-shadow:0 3px 14px rgba(0,0,0,.5)}
   .pol-head{display:flex;justify-content:space-between;align-items:baseline;
-    padding:2px 2px 7px;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:#111}
-  .pol-img{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a}
+    padding:2px 2px 6px;font-size:12.5px;font-weight:700;letter-spacing:-.01em;color:#111;
+    text-transform:uppercase}
+  .pol-img{position:relative;aspect-ratio:4/3;overflow:hidden;background:#8a8a8a}
   .pol-img img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
   html[data-theme="dark"] .pol-img img{filter:grayscale(20%) contrast(1.05) brightness(.92)}
   /* der untere Rand — das Polaroid-Merkmal, aber knapper als zuvor */
-  .pol-cap{padding:8px 2px 12px}
-  .pol-t{font-size:19px;font-weight:800;text-transform:uppercase;line-height:1.05;
-    display:flex;align-items:center;gap:7px}
+  .pol-cap{padding:7px 2px 10px}
+  .pol-t{font-size:22px;font-weight:800;text-transform:uppercase;line-height:1;
+    letter-spacing:-.035em;display:flex;align-items:center;gap:6px}
   .cat-dot{width:9px;height:9px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.25)}
-  .pol-m{font-size:12.5px;font-weight:400;letter-spacing:.1px;color:#3d3b37;margin-top:2px}
-  /* nur noch das Lesezeichen, Teilen ist raus (Input David 08.09.) */
-  .pol-acts{position:absolute;bottom:8px;right:8px}
-  .pol-acts .icon-btn{background:rgba(255,255,255,.92);width:30px;height:30px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.3)}
-  .pol-acts .icon-btn svg{width:17px;height:17px;stroke:#111}
-  .pol-acts .icon-btn.saved svg{fill:#111}
+  /* Die Adresse steht bewusst in einer anderen Schrift als die Versalien darueber —
+     auf dem iPhone ist das die Systemschrift, sichtbar anders als Helvetica. */
+  .pol-m{font-family:var(--font-addr);font-size:13px;font-weight:400;letter-spacing:0;
+    color:#3d3b37;margin-top:3px}
+  /* Speichern und Teilen gibt es nur noch im geoeffneten Event, nicht in der Liste */
   .sec-head{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
     color:var(--muted);padding:4px 4px 0}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -213,29 +224,29 @@
     flex-direction:column;overflow-y:auto}
   #detail.open{display:flex}
   .d-imgwrap{position:relative;flex:none}
-  .d-imgwrap img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
-  .d-close{position:absolute;top:calc(env(safe-area-inset-top, 0px) + 12px);left:12px;background:var(--bg);border:2px solid var(--fg);
+  .d-imgwrap img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;filter:grayscale(20%) contrast(1.05)}
+  .d-close{position:absolute;top:calc(env(safe-area-inset-top, 0px) + 12px);left:12px;background:var(--bg);border:1px solid var(--fg);
     color:var(--fg);width:36px;height:36px;font-size:18px;font-weight:800;cursor:pointer;z-index:5;
     font-family:inherit;border-radius:50%}
   .d-body{padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px}
-  .d-title{font-size:26px;font-weight:800;text-transform:uppercase;line-height:1.05}
-  .d-sub{font-size:18px;text-transform:uppercase;color:var(--muted)}
-  .d-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:2px solid var(--fg);
-    border-bottom:2px solid var(--fg);padding:14px 0}
+  .d-title{font-size:28px;font-weight:800;text-transform:uppercase;line-height:1;letter-spacing:-.035em}
+  .d-sub{font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;color:var(--muted)}
+  .d-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid var(--fg);
+    border-bottom:1px solid var(--fg);padding:14px 0}
   .d-grid .meta{font-size:13px}
-  .d-desc{font-size:14px;line-height:1.6;color:var(--sub)}
+  .d-desc{font-family:var(--font-addr);font-size:14px;line-height:1.6;color:var(--sub)}
   .d-tags{display:flex;gap:6px;flex-wrap:wrap}
   .d-tag{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-    border:1.5px solid var(--fg);padding:4px 10px;border-radius:999px}
+    border:1px solid var(--fg);padding:4px 10px;border-radius:999px}
   .rsvp-btn{
-    width:100%;border:2px solid var(--fg);background:var(--fg);color:var(--bg);
+    width:100%;border:1.5px solid var(--fg);background:var(--fg);color:var(--bg);
     font-weight:800;font-size:14px;letter-spacing:1px;padding:15px 0;cursor:pointer;
     text-transform:uppercase;font-family:inherit;border-radius:999px;
   }
   .rsvp-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   /* Like — ersetzt seit v10 den grossen RSVP-Block, bewusst klein */
   .like-row{display:flex}
-  .like-btn{display:inline-flex;align-items:center;gap:9px;border:2px solid var(--fg);
+  .like-btn{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--fg);
     background:var(--bg);color:var(--fg);font-weight:800;font-size:13px;letter-spacing:.5px;
     padding:9px 18px;cursor:pointer;font-family:inherit;border-radius:999px;text-transform:uppercase}
   .like-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
@@ -243,17 +254,17 @@
   .like-btn.on svg{fill:currentColor}
   .d-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .d-actions button,.d-actions a{
-    flex:1;border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
+    flex:1;border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
     font-size:13px;letter-spacing:.5px;padding:13px 0;cursor:pointer;text-transform:uppercase;
     text-align:center;text-decoration:none;font-family:inherit;border-radius:999px;
   }
   .d-actions button.primary{background:var(--fg);color:var(--bg)}
   .d-actions button.saved-state{background:var(--accent);color:#fff;border-color:var(--accent)}
   /* Kartenausschnitt im Detail — nur Anschauung, Navigation laeuft ueber die zwei Buttons */
-  .d-map{height:150px;border:2px solid var(--fg);border-radius:16px;overflow:hidden;
+  .d-map{height:150px;border:1px solid var(--hair);border-radius:16px;overflow:hidden;
     background:var(--hair)}
   .d-maps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .d-maps a{border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
+  .d-maps a{border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
     font-size:13px;letter-spacing:.5px;padding:13px 0;text-transform:uppercase;text-align:center;
     text-decoration:none;border-radius:999px}
   .d-livebar{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;
@@ -262,8 +273,9 @@
   #view-saved{overflow:hidden;background:var(--bg)}
   .tabbar{flex:none;display:flex;border-bottom:1px solid var(--hair);background:var(--bg)}
   /* Input David 08.09.: kein violetter Unterstrich, aktiver Tab schlicht in Akzentfarbe */
-  .tabbar .tab{flex:1;background:none;border:none;padding:12px 0 10px;font-family:inherit;
-    font-size:12px;font-weight:800;letter-spacing:.6px;color:var(--faint);cursor:pointer}
+  .tabbar .tab{flex:1;background:none;border:none;padding:13px 0 11px;font-family:inherit;
+    font-size:14px;font-weight:800;letter-spacing:-.02em;text-transform:uppercase;
+    color:var(--faint);cursor:pointer}
   .tabbar .tab.on{color:var(--accent)}
   .tabpane{flex:1;min-height:0;display:none;flex-direction:column}
   .tabpane.active{display:flex}
@@ -272,35 +284,39 @@
   /* timeline — Datumsspalte links, Karten rechts (Input David 08.09.) */
   .timeline{padding:14px 16px 20px}
   .tl-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
-  .tl-head b{font-size:15px;font-weight:800}
+  .tl-head b{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:-.02em}
   .tl-count{font-size:11px;color:var(--muted)}
   .tl-group{display:flex;gap:12px;margin-bottom:14px}
-  .tl-date{flex:none;width:46px;font-size:11.5px;font-weight:700;line-height:1.25;
-    color:var(--muted);padding-top:6px}
+  .tl-date{flex:none;width:48px;font-size:13px;font-weight:800;line-height:1.15;
+    letter-spacing:-.03em;text-transform:uppercase;color:var(--muted);padding-top:7px}
   .tl-group.tl-first .tl-date{color:var(--accent)}
   .tl-cards{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
   .tl-card{
-    display:flex;align-items:center;gap:0;cursor:pointer;
+    position:relative;display:flex;align-items:center;gap:0;cursor:pointer;
     background:#fff;color:#111;overflow:hidden;border-radius:2px;padding:6px;
     box-shadow:0 2px 9px rgba(0,0,0,.15);
   }
   html[data-theme="dark"] .tl-card{background:#d9d7d1;box-shadow:0 2px 9px rgba(0,0,0,.45)}
-  .tl-card img{width:58px;height:58px;object-fit:cover;flex:none;display:block;
+  .tl-card img{width:76px;height:57px;object-fit:cover;flex:none;display:block;border-radius:2px;
     filter:grayscale(20%) contrast(1.05)}
-  .tl-info{flex:1;min-width:0;padding:4px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px}
-  .tl-t{font-size:14px;font-weight:800;text-transform:uppercase;line-height:1.1;
+  .tl-info{flex:1;min-width:0;padding:4px 30px 4px 10px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+  .tl-t{font-size:17px;font-weight:800;text-transform:uppercase;line-height:1;
+    letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tl-s{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;color:#5c5a55;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-s{font-size:11px;text-transform:uppercase;color:#5c5a55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-m{font-size:11px;color:#5c5a55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tl-x{flex:none;background:none;border:none;cursor:pointer;padding:0 10px;display:flex;align-items:center}
-  .tl-x svg{width:18px;height:18px;stroke:#111;fill:#111;stroke-width:2}
+  .tl-m{font-family:var(--font-addr);font-size:11.5px;color:#5c5a55;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* oben rechts, damit ein Tipp den Eintrag wieder aus der Liste nimmt */
+  .tl-x{position:absolute;top:4px;right:4px;background:none;border:none;cursor:pointer;
+    padding:6px;display:flex;align-items:center;line-height:0}
+  .tl-x svg{width:17px;height:17px;stroke:#111;fill:#111;stroke-width:2}
   /* profile */
   .profile{padding:24px 16px}
   .p-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
     border-bottom:1px solid var(--hair);font-size:14px;font-weight:600}
   .p-row .val{font-weight:400;color:var(--muted)}
   .lang{display:flex;gap:6px}
-  .lang button{border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
+  .lang button{border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
     font-weight:700;padding:5px 11px;cursor:pointer;font-family:inherit;border-radius:999px}
   .lang button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .p-note{margin-top:24px;font-size:12px;color:var(--faint);line-height:1.6}
@@ -319,14 +335,14 @@
   .f-label{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
   .f-label .opt{font-weight:400;color:var(--faint);letter-spacing:.5px}
   .f-field input{
-    border:1.5px solid var(--fg);background:var(--bg);color:var(--fg);
+    border:1px solid var(--fg);background:var(--bg);color:var(--fg);
     font-family:inherit;font-size:16px;padding:12px 14px;border-radius:14px;width:100%;
   }
   .f-field input:focus{outline:2px solid var(--accent);outline-offset:-1px}
   .f-field input.err{border-color:#d40000}
   .f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .f-flyer{
-    border:1.5px dashed var(--fg);min-height:150px;display:flex;flex-direction:column;
+    border:1px dashed var(--fg);min-height:150px;display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:8px;cursor:pointer;position:relative;
     overflow:hidden;text-align:center;padding:16px;border-radius:18px;
   }
@@ -368,20 +384,20 @@
   .s-steps{display:flex;gap:8px;margin-bottom:2px}
   .s-step{flex:1;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;
     letter-spacing:.8px;text-transform:uppercase;color:var(--faint)}
-  .s-step b{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--faint);flex:none;
+  .s-step b{width:20px;height:20px;border-radius:50%;border:1px solid var(--faint);flex:none;
     display:flex;align-items:center;justify-content:center;font-size:10px}
   .s-step.on{color:var(--fg)}
   .s-step.on b{border-color:var(--accent);background:var(--accent);color:#fff}
   .s-pane{display:none;flex-direction:column;gap:18px}
   .s-pane.active{display:flex}
   .s-nav{display:grid;grid-template-columns:1fr 2fr;gap:10px}
-  .s-nav .ghost{border:2px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
+  .s-nav .ghost{border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
     font-size:13px;letter-spacing:.5px;padding:15px 0;cursor:pointer;text-transform:uppercase;
     font-family:inherit;border-radius:999px}
   .pickrow{display:flex;gap:8px;flex-wrap:wrap}
   .chip.plain{box-shadow:none}
   /* Bildausschnitt: verschieben und zoomen */
-  .crop-box{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a;
+  .crop-box{position:relative;aspect-ratio:4/3;overflow:hidden;background:#8a8a8a;
     touch-action:none;cursor:grab;border-radius:2px}
   .crop-box:active{cursor:grabbing}
   .crop-box img{position:absolute;left:50%;top:50%;max-width:none;display:block;
@@ -391,7 +407,7 @@
   html[data-theme="dark"] .crop-frame{background:#d9d7d1}
   .crop-tools{display:flex;align-items:center;gap:12px;margin-top:12px}
   .crop-tools input[type=range]{flex:1;accent-color:var(--accent)}
-  .crop-tools button{width:34px;height:34px;border-radius:50%;border:2px solid var(--fg);
+  .crop-tools button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
     background:var(--bg);color:var(--fg);font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
   /* Vorschau */
   .prev-tabs{display:flex;border-bottom:2px solid var(--fg)}
@@ -401,7 +417,7 @@
   .prev-tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
   .prev-frame{border:1px dashed var(--hair);border-radius:18px;padding:14px;background:var(--bg)}
   .prev-frame .pol{cursor:default}
-  .prev-img{position:relative;aspect-ratio:1/1;overflow:hidden;background:#8a8a8a}
+  .prev-img{position:relative;aspect-ratio:4/3;overflow:hidden;background:#8a8a8a}
   .prev-img img{position:absolute;left:50%;top:50%;max-width:none;display:block;transform-origin:center;
     filter:grayscale(20%) contrast(1.05)}
   .prev-full{background:var(--bg);border-radius:14px;overflow:hidden}
@@ -424,7 +440,7 @@
   #subs.open{display:flex}
   .sub-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--hair)}
   .sub-item:last-child{border-bottom:none}
-  .sub-th{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none;background:#8a8a8a}
+  .sub-th{width:72px;height:54px;border-radius:8px;object-fit:cover;flex:none;background:#8a8a8a}
   .sub-info{flex:1;min-width:0}
   .sub-t{font-size:13px;font-weight:800;text-transform:uppercase;white-space:nowrap;
     overflow:hidden;text-overflow:ellipsis}
@@ -440,7 +456,7 @@
   #saeule.open{display:flex}
   .sa-top{flex:none;display:flex;align-items:center;gap:14px;z-index:5;
     padding:calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px}
-  .sa-close{background:var(--bg);border:2px solid var(--fg);color:var(--fg);width:36px;height:36px;
+  .sa-close{background:var(--bg);border:1px solid var(--fg);color:var(--fg);width:36px;height:36px;
     font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;border-radius:50%}
   .sa-htitle{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--fg)}
   .sa-hsub{font-size:10px;color:var(--muted);letter-spacing:.5px}
@@ -483,13 +499,13 @@
   /* Karten-Blase: Tap auf einen Pin zeigt erst diese kompakte Karte, nicht gleich das Vollbild.
      Das Sheet fährt derweil ganz herunter — unten liegt immer nur eine Sache. */
   .mapcard{position:absolute;left:12px;right:12px;bottom:12px;z-index:750;
-    background:var(--bg);border:2px solid var(--fg);border-radius:20px;
+    background:var(--bg);border:1px solid var(--hair);border-radius:18px;
     display:none;align-items:center;gap:11px;padding:10px;cursor:pointer;touch-action:none;
     box-shadow:0 10px 34px rgba(0,0,0,.30);
     transform:translateY(16px);opacity:0;
     transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .22s ease}
   .mapcard.open{display:flex;transform:none;opacity:1}
-  .mc-img{width:66px;height:66px;border-radius:12px;object-fit:cover;flex:none;
+  .mc-img{width:84px;height:63px;border-radius:8px;object-fit:cover;flex:none;
     filter:grayscale(20%) contrast(1.05)}
   .mc-body{flex:1;min-width:0}
   .mc-top{display:flex;align-items:center;gap:7px;margin-bottom:4px}
@@ -497,10 +513,10 @@
     padding:3px 8px;border-radius:999px;flex:none}
   .mc-live{font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
     padding:3px 8px;border-radius:999px;background:var(--accent);color:#fff;flex:none}
-  .mc-t{font-size:14px;font-weight:800;text-transform:uppercase;line-height:1.1;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mc-m{font-size:10.5px;font-weight:600;text-transform:uppercase;color:var(--muted);
-    margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px}
+  .mc-t{font-size:16px;font-weight:800;text-transform:uppercase;line-height:1;
+    letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc-m{font-family:var(--font-addr);font-size:11px;font-weight:400;color:var(--muted);
+    margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mc-side{display:flex;flex-direction:column;justify-content:space-between;align-self:stretch;flex:none}
   .mc-side button{background:none;border:none;cursor:pointer;padding:2px 4px;line-height:0;color:var(--fg)}
   .mc-side .mc-x{font-size:17px;font-weight:800;font-family:inherit;line-height:1}
@@ -530,10 +546,16 @@
   <div class="view active" id="view-find">
     <div id="map"></div>
     <div class="osm-credit" id="osmCredit"></div>
-    <!-- Overlay am oberen Kartenrand: Live-Band, darunter die Filter-Chips (Datum-Pill vorne) -->
+    <!-- Über der Karte nur noch der Statusleisten-Verlauf und die zwei Knöpfe rechts -->
     <div class="map-top" id="mapTop">
       <div class="map-scrim"></div>
-      <div class="filters" id="filters"></div>
+      <div class="map-side">
+        <button class="msq" id="areaBtn" onclick="openAreaOverview()" aria-label="Kanton"></button>
+        <button class="msq" id="dateBtn" onclick="toggleDatePop(event)" aria-label="Zeitraum">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></svg>
+        </button>
+      </div>
       <div class="datepop" id="datePop"></div>
     </div>
     <div class="mapcard" id="mapcard"></div>
@@ -542,6 +564,7 @@
         <div class="grabber"></div>
         <div class="handle-label" id="handleLabel">EVENTS</div>
       </div>
+      <div class="filters" id="filters"></div>
       <div class="sheet-body">
         <div class="feed" id="feed"></div>
       </div>
@@ -1205,6 +1228,68 @@ let cantonLayer = null, cantonData = null, cantonLoading = false;
 const CANTON_NAMES = {};                   // Kuerzel -> Name, kommt aus der Datei
 
 function cantonName(ab){ return CANTON_NAMES[ab] || ab; }
+
+// Aussenringe eines Kantons (oder der ganzen Schweiz) als SVG-Pfad, auf 100x100 eingepasst.
+// Der Breitengrad wird ausgeglichen, sonst wirkt die Schweiz in die Breite gezogen.
+const LAT_SQUEEZE = Math.cos(47 * Math.PI / 180);
+function cantonPath(ab){
+  if(!cantonData) return null;
+  const feats = ab ? cantonData.features.filter(f => f.properties.ab === ab) : cantonData.features;
+  if(!feats.length) return null;
+  const rings = [];
+  feats.forEach(f => {
+    const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+    polys.forEach(poly => rings.push(poly[0]));      // nur Aussenringe
+  });
+  let minx=1e9, maxx=-1e9, miny=1e9, maxy=-1e9;
+  rings.forEach(r => r.forEach(([x,y]) => {
+    const px = x * LAT_SQUEEZE;
+    if(px<minx) minx=px; if(px>maxx) maxx=px;
+    if(y<miny) miny=y;  if(y>maxy) maxy=y;
+  }));
+  const S = 100, pad = 6;
+  const sc = Math.min((S-2*pad)/((maxx-minx)||1), (S-2*pad)/((maxy-miny)||1));
+  const ox = (S-(maxx-minx)*sc)/2, oy = (S-(maxy-miny)*sc)/2;
+  const X = x => ((x*LAT_SQUEEZE-minx)*sc+ox).toFixed(1);
+  const Y = y => (S-((y-miny)*sc+oy)).toFixed(1);
+  return rings.map(r => "M" + r.map(([x,y]) => X(x)+" "+Y(y)).join("L") + "Z").join("");
+}
+// Punkt-in-Polygon (Strahlenverfahren) — 26 Kantone, das kostet nichts
+function pointInRing(pt, ring){
+  let inside = false;
+  for(let i=0, j=ring.length-1; i<ring.length; j=i++){
+    const xi=ring[i][0], yi=ring[i][1], xj=ring[j][0], yj=ring[j][1];
+    if(((yi>pt[1]) !== (yj>pt[1])) && (pt[0] < (xj-xi)*(pt[1]-yi)/((yj-yi)||1e-12)+xi)) inside = !inside;
+  }
+  return inside;
+}
+function cantonAt(lng, lat){
+  if(!cantonData) return null;
+  for(const f of cantonData.features){
+    const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for(const poly of polys) if(pointInRing([lng,lat], poly[0])) return f.properties.ab;
+  }
+  return null;
+}
+const CH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
+  + '<path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/></svg>';
+function updateAreaBtn(){
+  const btn = $("areaBtn"); if(!btn) return;
+  let ab = state.area;
+  if(!ab && map && cantonData){
+    const c = map.getCenter();
+    ab = cantonAt(c.lng, c.lat);
+  }
+  const d = cantonPath(ab);
+  btn.innerHTML = d ? `<svg class="area-svg" viewBox="0 0 100 100" aria-hidden="true"><path d="${d}"/></svg>` : CH_SVG;
+  btn.classList.toggle("on", !!state.area);
+  btn.title = ab ? cantonName(ab) : "";
+}
+// Knopf tippen: raus auf die ganze Schweiz, dort waehlt man den naechsten Kanton
+function openAreaOverview(){
+  loadCantons();
+  setArea(null);
+}
 function cantonsWithEvents(){ return new Set(EVENTS.map(e => e.kanton).filter(Boolean)); }
 
 function loadCantons(){
@@ -1217,6 +1302,7 @@ function loadCantons(){
       d.features.forEach(f => CANTON_NAMES[f.properties.ab] = f.properties.name);
       buildCantonLayer();
       updateCantons();
+      updateAreaBtn();
     })
     .catch(() => { cantonLoading = false; });   // ohne Datei laeuft alles wie bisher weiter
 }
@@ -1272,6 +1358,7 @@ function setArea(ab, bounds){
   if(!ab) map.flyToBounds(CH_BOUNDS, {padding:[20,20], duration:.8});
   renderAll();
   updateCantons();
+  updateAreaBtn();
   if(ab) toast(t("toastArea").replace("{n}", cantonName(ab)));
 }
 
@@ -1386,11 +1473,7 @@ function initLang(){
 // ================= Render =================
 function renderFilters(){
   // Datum-Pill steht ganz vorne in derselben Zeile wie die Kategorie-Chips (v10)
-  const areaChip = state.area
-    ? `<button class="chip on" onclick="setArea(null)">${t("cantonOf").replace("{n}", cantonName(state.area))} ✕</button>`
-    : "";
-  $("filters").innerHTML = areaChip +
-    `<button class="chip" id="dateBtn" onclick="toggleDatePop(event)">ALLE</button>` +
+  $("filters").innerHTML =
     CATS.map(c =>
     `<button class="chip ${state.cat===c.key?'on':''}" onclick="setCat('${c.key}')">${catLabel(c.key)}</button>`).join("");
 }
@@ -1409,9 +1492,6 @@ function polCard(e,i){
         <img src="${img(e,700)}" alt="" loading="lazy">
         ${e.price?`<div class="price-tag">${e.price}</div>`:""}
         ${isLive(e)?`<div class="live-tag">LIVE</div>`:(soonLabel(e)?`<div class="soon-tag">${soonLabel(e)}</div>`:"")}
-        <div class="pol-acts">
-          <button class="icon-btn bm ${state.saved.has(e.id)?'saved':''}" onclick="event.stopPropagation();toggleSave(${e.id})" title="${t('tSave')}">${bmSvg}</button>
-        </div>
       </div>
       <div class="pol-cap">
         <div class="pol-t"><span class="cat-dot" style="background:${color}"></span>${e.title}</div>
@@ -1653,7 +1733,6 @@ function initDetailMap(e){
 function destroyDetailMap(){ if(dmap){ dmap.remove(); dmap = null; } }
 
 function renderDateFilter(){
-  $("dateBtn").textContent = (state.range==="all" ? t("rs_any") : t("rs_"+state.range)) + " \u25BE";
   $("dateBtn").classList.toggle("on", state.range !== "all");
   $("datePop").innerHTML = RANGES.map(r =>
     `<button class="${state.range===r?'on':''}" onclick="setRange('${r}')">${t("range_"+r)}</button>`).join("");
@@ -1686,17 +1765,16 @@ function sheetY(s){
   // Voll: die Liste schiebt sich bis unter das Live-Band und deckt die Filter-Chips zu -
   // so bleibt mehr vom Polaroid sichtbar. Zum Filtern zieht man das Sheet wieder runter.
   if(s==="list"){
-    const f = $("filters"), v = $("view-find");
-    if(f && v){
-      const y = Math.round(f.getBoundingClientRect().top - v.getBoundingClientRect().top);
-      if(y > 20) return y;
-    }
-    return 110;
+    // Voll: nur der Statusleisten-Streifen bleibt Karte
+    const sc = document.querySelector(".map-scrim");
+    return Math.max(52, (sc ? sc.offsetHeight : 60) + 8);
   }
   if(s==="hidden") return h + 10;               // ganz weg, wenn die Karten-Blase offen ist (Rand mit)
   if(s==="half") return Math.round(h*0.45);
-  // Peek: Griff + Oberkante der ersten Card, Karte praktisch vollflaechig
-  return h - Math.min(150, Math.max(110, Math.round(h*0.16)));
+  // Peek: Griff und Kategorie-Zeile ragen über den Kartenrand, der Rest ist Karte
+  const hd = document.querySelector(".handle"), fl = $("filters");
+  const need = (hd ? hd.offsetHeight : 40) + (fl ? fl.offsetHeight : 50) + 2;
+  return h - Math.max(84, Math.min(140, need));
 }
 function setSheet(s, animate=true){
   state.sheet = s;
@@ -1898,7 +1976,7 @@ function closeDetail(){ destroyDetailMap(); $("detail").classList.remove("open")
 // Der Einreicher soll VOR dem Absenden sehen, wie sein Event bei uns erscheint.
 let flyerData = null, subStep = 1, prevTab = "list";
 let subCat = null, subArt = "event";
-const crop = {box:0, w:0, h:0, ox:0, oy:0, z:1};
+const crop = {box:0, boxH:0, w:0, h:0, ox:0, oy:0, z:1};
 
 function openSubmit(){ $("submit").classList.add("open"); renderPicks(); }
 function closeSubmit(){ $("submit").classList.remove("open"); }
@@ -1976,13 +2054,15 @@ function flyerPicked(inp){
   };
   r.readAsDataURL(f);
 }
+const CROP_AR = 4/3;   // ein Format für alles: Liste, Karten-Blase, Vollbild
 function initCrop(){
   const box = $("cropBox").clientWidth || 300;
+  const boxH = box / CROP_AR;
   const im = $("cropImg");
   const ar = (im.naturalWidth || 1) / (im.naturalHeight || 1);
-  // Bild deckt das Quadrat bei Zoom 1 vollstaendig ab
-  crop.box = box;
-  if(ar >= 1){ crop.h = box; crop.w = box*ar; } else { crop.w = box; crop.h = box/ar; }
+  // Bild deckt das Fenster bei Zoom 1 vollstaendig ab
+  crop.box = box; crop.boxH = boxH;
+  if(ar >= CROP_AR){ crop.h = boxH; crop.w = boxH*ar; } else { crop.w = box; crop.h = box/ar; }
   crop.ox = 0; crop.oy = 0; crop.z = 1;
   $("cropRange").value = 100;
   applyCrop();
@@ -1999,7 +2079,7 @@ function initCrop(){
 const MIN_PX = 1000;   // kürzere Kante; darunter wird die Vollansicht sichtbar weich
 function clampCrop(){
   const mx = Math.max(0, (crop.w*crop.z - crop.box)/2);
-  const my = Math.max(0, (crop.h*crop.z - crop.box)/2);
+  const my = Math.max(0, (crop.h*crop.z - (crop.boxH||crop.box))/2);
   crop.ox = Math.max(-mx, Math.min(mx, crop.ox));
   crop.oy = Math.max(-my, Math.min(my, crop.oy));
 }
@@ -2533,8 +2613,8 @@ function show(v){
 map = L.map("map",{zoomControl:false,attributionControl:false}).setView([46.9445,7.4400],13);
 map.on("click", ()=>{ closeDatePop(); if(mapCardId !== null) closeMapCard(); else setSheet("map"); });
 map.on("zoomend", ()=>{ renderMap(); updateCantons(); });  // Cluster neu bündeln, Grenzen ein-/ausblenden
-map.on("moveend", ()=>{ if(map.getZoom() <= AREA_ZOOM) loadCantons(); });
-if(map.getZoom() <= AREA_ZOOM) loadCantons();
+map.on("moveend", ()=>{ loadCantons(); updateAreaBtn(); });
+loadCantons();
 document.addEventListener("click", ()=>closeDatePop());
 initTheme();
 initLang();
@@ -2547,6 +2627,7 @@ setSheet("map", false);   // Start: volle Kartenansicht (v10)
 locateUser();
 renderAll();
 renderSubsCount();
+updateAreaBtn();   // Schweiz-Umriss, bis die Kantonsdatei da ist
 // Geteilter Link? Direkt das Event öffnen
 const sharedId = Number(new URLSearchParams(location.search).get("event"));
 if(sharedId && EVENTS.some(e=>e.id===sharedId)) openDetail(sharedId);
