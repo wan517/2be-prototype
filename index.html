@@ -372,6 +372,10 @@
   .f-inline .f-pre{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--muted);
     text-transform:uppercase;width:74px;flex:none}
   .f-inline input{flex:1}
+  .shrink-note{display:none;font-size:11px;line-height:1.5;color:var(--muted);
+    background:var(--hair);border-radius:12px;padding:9px 12px;margin-top:10px}
+  .shrink-note.show{display:block}
+  .shrink-note b{font-weight:800;color:var(--fg)}
   .px-warn{display:none;font-size:11px;line-height:1.5;color:#8a5a00;background:#fff5e0;
     border-radius:12px;padding:9px 12px;margin-top:10px}
   .px-warn.show{display:block}
@@ -740,6 +744,7 @@
             <input type="range" id="cropRange" min="100" max="400" value="100" oninput="cropSetZoom(this.value/100)">
             <button onclick="cropStep(1)">+</button>
           </div>
+          <div class="shrink-note" id="shrinkNote"></div>
           <div class="px-warn" id="pxWarn"></div>
           <div class="f-hint" style="margin-top:10px" data-i18n="cropHint">Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.</div>
           <button class="ghost" style="width:100%;margin-top:12px" onclick="$('flyerInput').click()" data-i18n="change">Ändern</button>
@@ -859,6 +864,9 @@ const I18N = {
     lblNotes:"Fragen oder Hinweise ans Team",
     phNotes:"Etwas Besonderes zu beachten? Etwas unklar? Schreib es hier rein.",
     pxWarn:"Dein Bild ist {w} × {h} Pixel. Unter {m} Pixel wird es in der Vollansicht sichtbar weich — einreichen kannst du es trotzdem.",
+    shrinking:"Bild wird für den Upload verkleinert …",
+    shrinkDone:"Verkleinert: {w0} × {h0} → {w} × {h} Pixel · {a} → {b}",
+    shrinkFail:"Verkleinern hat nicht geklappt — das Bild wird unverändert übernommen.",
     cropHint:"Bild verschieben und zoomen, bis der Ausschnitt sitzt — er gilt für beide Ansichten. Halte Titel, Gesichter und Logos möglichst mittig.",
     prevList:"Listenansicht", prevFull:"Vollbild",
     prevHint:"So erscheint dein Event bei uns. Passt der Ausschnitt nicht, geh zurück und verschieb ihn.",
@@ -916,6 +924,9 @@ const I18N = {
     lblNotes:"Questions or notes for the team",
     phNotes:"Anything special to know? Anything unclear? Write it here.",
     pxWarn:"Your image is {w} × {h} pixels. Below {m} pixels it will look soft in the full view — you can still submit it.",
+    shrinking:"Resizing the image for upload …",
+    shrinkDone:"Resized: {w0} × {h0} → {w} × {h} pixels · {a} → {b}",
+    shrinkFail:"Resizing failed — the image is used unchanged.",
     cropHint:"Move and zoom the image until the crop is right — it applies to both views. Keep titles, faces and logos near the centre.",
     prevList:"List view", prevFull:"Full screen",
     prevHint:"This is how your event will look. If the crop is off, go back and adjust it.",
@@ -973,6 +984,9 @@ const I18N = {
     lblNotes:"Questions ou remarques pour l'équipe",
     phNotes:"Quelque chose de particulier ? Une question ? Écris-la ici.",
     pxWarn:"Ton image fait {w} × {h} pixels. En dessous de {m} pixels elle sera floue en plein écran — tu peux quand même l'envoyer.",
+    shrinking:"L'image est réduite pour l'envoi …",
+    shrinkDone:"Réduite : {w0} × {h0} → {w} × {h} pixels · {a} → {b}",
+    shrinkFail:"La réduction a échoué — l'image est reprise telle quelle.",
     cropHint:"Déplace et zoome l'image jusqu'à ce que le cadrage soit bon — il vaut pour les deux vues. Garde titres, visages et logos vers le centre.",
     prevList:"Vue liste", prevFull:"Plein écran",
     prevHint:"Voilà comment ton événement apparaîtra. Si le cadrage ne va pas, reviens en arrière.",
@@ -2040,19 +2054,81 @@ function countChars(id, outId, max){
 }
 
 // ---- Bild und Ausschnitt ----
+// Handyfotos sind 3 bis 10 MB gross, angezeigt wird der Flyer aber nie breiter als
+// rund 1200 Pixel. Ungekuerzt hochgeladen frisst das Speicher und vor allem Traffic:
+// jeder Blick in die Liste laedt die Bilder erneut. Deshalb wird VOR dem Hochladen
+// verkleinert und in WebP gewandelt — derselbe sichtbare Flyer, rund ein Zehntel gross.
+const MAX_EDGE = 1800;   // laengere Kante; laesst Luft zum Hineinzoomen im Ausschnitt
+const WEBP_Q   = 0.82;
+
+const kb = b => b >= 1048576 ? (b/1048576).toFixed(1)+" MB" : Math.round(b/1024)+" KB";
+const dataBytes = d => Math.round((d.length - (d.indexOf(",")+1)) * 0.75);
+
+function shrinkImage(file){
+  return new Promise((resolve, reject) => {
+    const rd = new FileReader();
+    rd.onerror = () => reject(new Error("read"));
+    rd.onload = ev => {
+      const src = ev.target.result;
+      const im = new Image();
+      im.onerror = () => reject(new Error("decode"));
+      im.onload = () => {
+        const w0 = im.naturalWidth, h0 = im.naturalHeight;
+        const scale = Math.min(1, MAX_EDGE / Math.max(w0, h0));
+        const w = Math.max(1, Math.round(w0*scale)), h = Math.max(1, Math.round(h0*scale));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const g = c.getContext("2d");
+        g.imageSmoothingQuality = "high";
+        g.drawImage(im, 0, 0, w, h);
+        let out = "";
+        try{ out = c.toDataURL("image/webp", WEBP_Q); }catch(e){}
+        if(out.indexOf("data:image/webp") !== 0){          // aeltere Safari-Versionen
+          out = c.toDataURL("image/jpeg", 0.85);
+        }
+        // Falls das Ergebnis groesser waere als das Original, das Original behalten
+        if(scale === 1 && out.length >= src.length) out = src;
+        resolve({data:out, w0, h0, w, h, before:file.size, after:dataBytes(out)});
+      };
+      im.src = src;
+    };
+    rd.readAsDataURL(file);
+  });
+}
+
+let flyerSrcW = 0, flyerSrcH = 0;   // Masse des Originals, fuer den Schaerfe-Hinweis
 function flyerPicked(inp){
   const f = inp.files && inp.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    flyerData = ev.target.result;
-    $("flyerBox").style.display = "none";
-    $("cropWrap").style.display = "block";
-    $("err-flyer").classList.remove("show");
+  const note = $("shrinkNote");
+  note.textContent = t("shrinking");
+  note.classList.add("show");
+  $("flyerBox").style.display = "none";
+  $("cropWrap").style.display = "block";
+  $("err-flyer").classList.remove("show");
+
+  shrinkImage(f).then(r => {
+    flyerData = r.data;
+    flyerSrcW = r.w0; flyerSrcH = r.h0;
+    note.innerHTML = t("shrinkDone")
+      .replace("{w0}", r.w0).replace("{h0}", r.h0)
+      .replace("{w}",  r.w ).replace("{h}",  r.h )
+      .replace("{a}",  kb(r.before)).replace("{b}", "<b>"+kb(r.after)+"</b>");
     const im = $("cropImg");
     im.onload = initCrop;
     im.src = flyerData;
-  };
-  r.readAsDataURL(f);
+  }).catch(() => {
+    // Notfall: unverkleinert weiterarbeiten, lieber gross als gar nicht
+    const rd = new FileReader();
+    rd.onload = ev => {
+      flyerData = ev.target.result;
+      flyerSrcW = 0; flyerSrcH = 0;
+      note.textContent = t("shrinkFail");
+      const im = $("cropImg");
+      im.onload = initCrop;
+      im.src = flyerData;
+    };
+    rd.readAsDataURL(f);
+  });
 }
 const CROP_AR = 4/3;   // ein Format für alles: Liste, Karten-Blase, Vollbild
 function initCrop(){
@@ -2067,7 +2143,7 @@ function initCrop(){
   $("cropRange").value = 100;
   applyCrop();
   // Warnen statt blockieren: ein weichgezeichneter Flyer ist besser als gar keiner
-  const w = im.naturalWidth || 0, h = im.naturalHeight || 0;
+  const w = flyerSrcW || im.naturalWidth || 0, h = flyerSrcH || im.naturalHeight || 0;
   const warn = $("pxWarn");
   if(w && h && Math.min(w, h) < MIN_PX){
     warn.textContent = t("pxWarn").replace("{w}", w).replace("{h}", h).replace("{m}", MIN_PX);
@@ -2233,6 +2309,8 @@ function resetSubmit(){
     .forEach(i=>{ $(i).value=""; $(i).classList.remove("err"); });
   countChars("subDesc","cnt-desc",320); countChars("subNotes","cnt-notes",400);
   $("pxWarn").classList.remove("show");
+  $("shrinkNote").classList.remove("show"); $("shrinkNote").textContent = "";
+  flyerSrcW = 0; flyerSrcH = 0;
   document.querySelectorAll(".f-err").forEach(e=>e.classList.remove("show"));
   $("submitDone").classList.remove("show");
   $("submitForm").style.display = "flex";
