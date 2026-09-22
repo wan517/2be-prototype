@@ -15,7 +15,7 @@
      Verlauf unter dem Logo uebergeht statt als weisser Block zu stehen. In der
      Homescreen-App greift stattdessen black-translucent, dort spielt es keine Rolle. -->
 <meta name="theme-color" content="#141416" id="themeColor">
-<title>2BE — Prototyp v10</title>
+<title>2BE — Prototyp v17</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -260,16 +260,17 @@
   }
   .d-actions button.primary{background:var(--fg);color:var(--bg)}
   .d-actions button.saved-state{background:var(--accent);color:#fff;border-color:var(--accent)}
-  /* Kartenausschnitt im Detail — nur Anschauung, Navigation laeuft ueber die zwei Buttons */
+  /* Kartenausschnitt im Detail. Ein Tipp darauf oeffnet die Karten-App des Geraets (#100),
+     die zwei Buttons Apple Maps / Google Maps gibt es seit v15 nicht mehr */
+  .d-map-link{position:relative;display:block;text-decoration:none;color:inherit;cursor:pointer}
   .d-map{height:150px;border:1px solid var(--hair);border-radius:16px;overflow:hidden;
     background:var(--hair)}
-  .d-maps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .d-maps a{border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-weight:800;
-    font-size:13px;letter-spacing:.5px;padding:13px 0;text-transform:uppercase;text-align:center;
-    text-decoration:none;border-radius:999px}
+  .d-map-hint{position:absolute;right:10px;bottom:10px;z-index:800;pointer-events:none;
+    background:var(--bg);color:var(--fg);border:1px solid var(--hair);border-radius:999px;
+    font-weight:800;font-size:11px;letter-spacing:.5px;padding:6px 12px;text-transform:uppercase}
   .d-livebar{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:1px;
     padding:8px 16px;text-transform:uppercase}
-  /* 2BE-Tab: zwei Bereiche — My Line Up / Editor's Choice (v11) */
+  /* 2BE-Tab: zwei Bereiche — My Line Up / Community (v11, bis v14 «Editor's Choice», #99) */
   #view-saved{overflow:hidden;background:var(--bg)}
   .tabbar{flex:none;display:flex;border-bottom:1px solid var(--hair);background:var(--bg)}
   /* Input David 08.09.: kein violetter Unterstrich, aktiver Tab schlicht in Akzentfarbe */
@@ -315,6 +316,8 @@
   .p-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;
     border-bottom:1px solid var(--hair);font-size:14px;font-weight:600}
   .p-row .val{font-weight:400;color:var(--muted)}
+  .p-hint{display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--muted)}
+  .p-hint:empty{display:none}
   .lang{display:flex;gap:6px}
   .lang button{border:1px solid var(--fg);background:var(--bg);color:var(--fg);font-size:11px;
     font-weight:700;padding:5px 11px;cursor:pointer;font-family:inherit;border-radius:999px}
@@ -451,12 +454,14 @@
   .sub-m{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:3px}
   .sub-state{font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
     padding:3px 8px;border-radius:999px;background:var(--hair);color:var(--muted);flex:none}
-  /* ===== Plakatsäule (verstecktes Schmuckstück — Tap aufs Logo) ===== */
+  /* ===== Plakatsäule (2BE → Community; der Logo-Tap ist mit #53 entfallen) ===== */
   #saeule{position:absolute;inset:0;z-index:850;display:none;flex-direction:column;overflow:hidden}
   #saeule, #pane-editors{
     background:linear-gradient(180deg,#DCE4E8 0%,#EDEAE0 55%,#C9C2B2 78%,#A89F8C 100%)}
+  /* Nacht: kein Amber mehr, sondern Violett — dieselbe Farbe, die auch der Lichthof
+     um die Säule hat (#114). Sonst kämpfen zwei Lichtquellen gegeneinander. */
   html[data-theme="dark"] #saeule, html[data-theme="dark"] #pane-editors{
-    background:linear-gradient(180deg,#04060C 0%,#0B1020 50%,#141a2a 75%,#241d10 100%)}
+    background:linear-gradient(180deg,#05040C 0%,#0C0A1C 48%,#171233 76%,#241945 100%)}
   #saeule.open{display:flex}
   .sa-top{flex:none;display:flex;align-items:center;gap:14px;z-index:5;
     padding:calc(env(safe-area-inset-top, 0px) + 14px) 16px 14px}
@@ -469,9 +474,9 @@
   .sa-scene:active{cursor:grabbing}
   .sa-scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   /* Lichtschein hinter der Säule (Nacht) */
-  html[data-theme="dark"] .sa-scene::before{content:"";position:absolute;top:8%;left:50%;
-    transform:translateX(-50%);width:340px;height:340px;border-radius:50%;
-    background:radial-gradient(circle,rgba(255,214,110,.22) 0%,rgba(255,214,110,0) 70%)}
+  html[data-theme="dark"] .sa-scene::before{content:"";position:absolute;top:10%;left:50%;
+    transform:translateX(-50%);width:78%;aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle,rgba(176,146,255,.26) 0%,rgba(176,146,255,0) 68%)}
   /* Die Säule selbst wird per three.js in #saScene gerendert (siehe JS) */
   .sa-hint{flex:none;text-align:center;font-size:10px;letter-spacing:1px;text-transform:uppercase;
     color:var(--faint);padding:0 16px 18px}
@@ -575,21 +580,22 @@
     </div>
   </div>
 
-  <!-- 2BE: My Line Up / Editor's Choice -->
+  <!-- 2BE: My Line Up / Community -->
   <div class="view" id="view-saved">
     <div class="safe-top"></div>
     <div class="tabbar">
       <button class="tab on" id="tab-lineup"  onclick="setSavedTab('lineup')"  data-i18n="tabLineup">My Line Up</button>
-      <button class="tab"    id="tab-editors" onclick="setSavedTab('editors')" data-i18n="tabEditors">Editor&#39;s Choice</button>
+      <button class="tab"    id="tab-editors" onclick="setSavedTab('editors')" data-i18n="tabEditors">Community</button>
     </div>
     <div class="tabpane active" id="pane-lineup">
       <div class="timeline" id="timeline"></div>
     </div>
-    <!-- Editor's Choice ist vorerst die Plakatsäule. Ob das so bleibt, ist offen —
-         deshalb steckt der Inhalt in einem eigenen Pane und ist austauschbar. -->
+    <!-- Community (#99, bis v14 «Editor's Choice») zeigt vorerst die Plakatsäule. Was dort
+         dauerhaft hingehört, ist offen — deshalb steckt der Inhalt in einem eigenen Pane und
+         ist austauschbar. Die internen Namen (tab-editors, pane-editors) bleiben bewusst. -->
     <div class="tabpane" id="pane-editors">
       <div class="sa-scene" id="saSceneTab"></div>
-      <div class="sa-hint" data-i18n="saHint">Plakat antippen → Event · Tür → einreichen</div>
+      <div class="sa-hint" data-i18n="saHint">Wischen für die nächsten zwei · Plakat antippen → Event</div>
     </div>
   </div>
 
@@ -598,8 +604,9 @@
     <div class="safe-top"></div>
     <div class="view-title" data-i18n="navProfile">profile</div>
     <div class="profile">
-      <div class="p-row"><span data-i18n="appearance">Erscheinungsbild</span>
+      <div class="p-row"><span><span data-i18n="appearance">Erscheinungsbild</span><span class="p-hint" id="themeHint"></span></span>
         <div class="lang">
+          <button id="tm-auto" onclick="setThemeMode('auto')" data-i18n="auto">Auto</button>
           <button id="tm-light" onclick="setThemeMode('light')" data-i18n="day">Tag</button>
           <button id="tm-dark" onclick="setThemeMode('dark')" data-i18n="night">Nacht</button>
         </div>
@@ -614,7 +621,7 @@
       <div class="p-row" onclick="openSubmit()" style="cursor:pointer"><span data-i18n="submitEvent">Event einreichen</span><span class="val">→</span></div>
       <div class="p-row" onclick="openSubs()" style="cursor:pointer"><span data-i18n="mySubs">Meine Einreichungen</span><span class="val" id="subsCount">0</span></div>
       <div class="p-row" id="resetRow" onclick="resetLocal()" style="cursor:pointer"><span id="resetLabel" data-i18n="resetAll">Alles zurücksetzen</span><span class="val">↺</span></div>
-      <div class="p-note" data-i18n="profileNote">Prototyp v13 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.</div>
+      <div class="p-note" data-i18n="profileNote">Prototyp v17 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.</div>
     </div>
   </div>
 
@@ -798,7 +805,7 @@
       </div>
     </div>
     <div class="sa-scene" id="saScene"></div>
-    <div class="sa-hint" data-i18n="saHint">Plakat antippen → Event · Telefonkabine → Event einreichen</div>
+    <div class="sa-hint" data-i18n="saHint">Wischen für die nächsten zwei · Plakat antippen → Event</div>
   </div>
 
   <div class="ticker" id="ticker" style="display:none"></div>
@@ -832,10 +839,10 @@ const I18N = {
     events:"EVENTS", showList:"LISTE ANZEIGEN", showMap:"KARTE ANZEIGEN",
     range_all:"Alle Daten", range_month:"Diesen Monat", range_week:"Diese Woche", range_today:"Heute",
     rs_any:"ZEITRAUM", rs_all:"ALLE", rs_month:"MONAT", rs_week:"WOCHE", rs_today:"HEUTE",
-    appearance:"Erscheinungsbild", day:"Tag", night:"Nacht",
+    appearance:"Erscheinungsbild", auto:"Auto", day:"Tag", night:"Nacht", sunNightFrom:"Nacht ab {t}", sunDayFrom:"Tag ab {t}",
     language:"Sprache", city:"Stadt", notifications:"Benachrichtigungen", off:"Aus",
     submitEvent:"Event einreichen",
-    profileNote:"Prototyp v13 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.",
+    profileNote:"Prototyp v17 — Favoriten, Likes und Einreichungen werden lokal im Browser gespeichert.",
     mySubs:"Meine Einreichungen", subsEmpty:"Du hast noch nichts eingereicht.",
     subPending:"In Prüfung", resetAll:"Alles zurücksetzen", resetSure:"Wirklich? Nochmal tippen",
     resetDone:"Zurückgesetzt",
@@ -871,9 +878,9 @@ const I18N = {
     prevList:"Listenansicht", prevFull:"Vollbild",
     prevHint:"So erscheint dein Event bei uns. Passt der Ausschnitt nicht, geh zurück und verschieb ihn.",
     errDateEnd:"Enddatum fehlt oder liegt vor dem Start",
-    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
-    saTitle:"Plakatsäule", saSub:"Kuratierte Auswahl der Woche — drehen & entdecken",
-    saHint:"Plakat antippen → Event · Tür → einreichen", doorSign:"GET LISTED", doorHint:"Tür öffnen · Event einreichen",
+    tabLineup:"My Line Up", tabEditors:"Community",
+    saTitle:"Plakatsäule", saSub:"Was die Szene gerade nach oben trägt",
+    saHint:"Wischen für die nächsten zwei · Plakat antippen → Event", doorSign:"GET LISTED", doorHint:"Tür öffnen · Event einreichen",
     emptyNothing:"Hier ist gerade nichts", emptyInCat:" in dieser Kategorie",
     emptyAdjust:"Kategorie oder Zeitraum anpassen.",
     upcoming:"Nächste Events", results:"{n} Ergebnisse",
@@ -881,7 +888,7 @@ const I18N = {
     cantonOf:"Kanton {n}", toastArea:"Kanton {n}", lbHint:"Ganzes Bild · tippen zum Schliessen", liveNow:"● Läuft jetzt gerade", like:"Gefällt mir", liked:"Gefällt dir",
     secRunning:"Läuft gerade", secUpcoming:"Demnächst",
     lastDay:"Letzter Tag", leftDays:"Noch {n} Tage", leftWeeks:"Noch {n} Wochen", until:"Bis {d}",
-    saved:"✓ Gespeichert", save:"Speichern", share:"Teilen", calendar:"+ Kalender",
+    saved:"✓ Gespeichert", save:"Speichern", share:"Teilen", calendar:"+ Kalender", openMaps:"Karte öffnen ↗",
     tShare:"Teilen", tSave:"Speichern", tRemove:"Entfernen",
     toastRange:"Zeitraum: {n}",
     toastCal:"Termin erstellt — im Kalender öffnen", toastShare:"Link kopiert — auch ohne App öffenbar",
@@ -892,10 +899,10 @@ const I18N = {
     events:"EVENTS", showList:"SHOW LIST", showMap:"SHOW MAP",
     range_all:"All dates", range_month:"This month", range_week:"This week", range_today:"Today",
     rs_any:"DATE", rs_all:"ALL", rs_month:"MONTH", rs_week:"WEEK", rs_today:"TODAY",
-    appearance:"Appearance", day:"Day", night:"Night",
+    appearance:"Appearance", auto:"Auto", day:"Day", night:"Night", sunNightFrom:"Night from {t}", sunDayFrom:"Day from {t}",
     language:"Language", city:"City", notifications:"Notifications", off:"Off",
     submitEvent:"Submit event",
-    profileNote:"Prototype v13 — favourites, likes and submissions are stored locally in your browser.",
+    profileNote:"Prototype v17 — favourites, likes and submissions are stored locally in your browser.",
     mySubs:"My submissions", subsEmpty:"You haven't submitted anything yet.",
     subPending:"In review", resetAll:"Reset everything", resetSure:"Sure? Tap again",
     resetDone:"Reset",
@@ -931,9 +938,9 @@ const I18N = {
     prevList:"List view", prevFull:"Full screen",
     prevHint:"This is how your event will look. If the crop is off, go back and adjust it.",
     errDateEnd:"End date missing or before the start",
-    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
-    saTitle:"Poster column", saSub:"Curated pick of the week — spin & discover",
-    saHint:"Tap a poster → event · Door → get listed", doorSign:"GET LISTED", doorHint:"Open the door · submit an event",
+    tabLineup:"My Line Up", tabEditors:"Community",
+    saTitle:"Poster column", saSub:"What the scene is pushing up right now",
+    saHint:"Swipe for the next two · tap a poster → event", doorSign:"GET LISTED", doorHint:"Open the door · submit an event",
     emptyNothing:"Nothing here", emptyInCat:" in this category",
     emptyAdjust:"Adjust the category or the time range.",
     upcoming:"Upcoming Events", results:"{n} results",
@@ -941,7 +948,7 @@ const I18N = {
     cantonOf:"Canton of {n}", toastArea:"Canton of {n}", lbHint:"Full image · tap to close", liveNow:"● Happening now", like:"Like", liked:"Liked",
     secRunning:"Happening now", secUpcoming:"Upcoming",
     lastDay:"Last day", leftDays:"{n} days left", leftWeeks:"{n} weeks left", until:"Until {d}",
-    saved:"✓ Saved", save:"Save", share:"Share", calendar:"+ Calendar",
+    saved:"✓ Saved", save:"Save", share:"Share", calendar:"+ Calendar", openMaps:"Open in Maps ↗",
     tShare:"Share", tSave:"Save", tRemove:"Remove",
     toastRange:"Time range: {n}",
     toastCal:"Event created — open in your calendar", toastShare:"Link copied — opens without the app too",
@@ -952,10 +959,10 @@ const I18N = {
     events:"ÉVÉNEMENTS", showList:"AFFICHER LA LISTE", showMap:"AFFICHER LA CARTE",
     range_all:"Toutes les dates", range_month:"Ce mois", range_week:"Cette semaine", range_today:"Aujourd'hui",
     rs_any:"DATE", rs_all:"TOUTES", rs_month:"MOIS", rs_week:"SEMAINE", rs_today:"AUJ.",
-    appearance:"Apparence", day:"Jour", night:"Nuit",
+    appearance:"Apparence", auto:"Auto", day:"Jour", night:"Nuit", sunNightFrom:"Nuit dès {t}", sunDayFrom:"Jour dès {t}",
     language:"Langue", city:"Ville", notifications:"Notifications", off:"Désactivé",
     submitEvent:"Proposer un événement",
-    profileNote:"Prototype v13 — favoris, likes et propositions sont stockés localement dans ton navigateur.",
+    profileNote:"Prototype v17 — favoris, likes et propositions sont stockés localement dans ton navigateur.",
     mySubs:"Mes propositions", subsEmpty:"Tu n'as encore rien proposé.",
     subPending:"En examen", resetAll:"Tout réinitialiser", resetSure:"Sûr ? Touche encore",
     resetDone:"Réinitialisé",
@@ -991,9 +998,9 @@ const I18N = {
     prevList:"Vue liste", prevFull:"Plein écran",
     prevHint:"Voilà comment ton événement apparaîtra. Si le cadrage ne va pas, reviens en arrière.",
     errDateEnd:"Date de fin manquante ou avant le début",
-    tabLineup:"My Line Up", tabEditors:"Editor's Choice",
-    saTitle:"Colonne Morris", saSub:"Sélection de la semaine — fais tourner & découvre",
-    saHint:"Touche une affiche → événement · Porte → proposer", doorSign:"GET LISTED", doorHint:"Ouvre la porte · propose un événement",
+    tabLineup:"My Line Up", tabEditors:"Community",
+    saTitle:"Colonne Morris", saSub:"Ce que la scène fait monter en ce moment",
+    saHint:"Glisse pour les deux suivantes · touche une affiche → événement", doorSign:"GET LISTED", doorHint:"Ouvre la porte · propose un événement",
     emptyNothing:"Rien ici", emptyInCat:" dans cette catégorie",
     emptyAdjust:"Ajuste la catégorie ou la période.",
     upcoming:"Prochains événements", results:"{n} résultats",
@@ -1001,7 +1008,7 @@ const I18N = {
     cantonOf:"Canton de {n}", toastArea:"Canton de {n}", lbHint:"Image entière · touche pour fermer", liveNow:"● En ce moment", like:"J'aime", liked:"Aimé",
     secRunning:"En ce moment", secUpcoming:"Prochainement",
     lastDay:"Dernier jour", leftDays:"Encore {n} jours", leftWeeks:"Encore {n} semaines", until:"Jusqu'au {d}",
-    saved:"✓ Enregistré", save:"Enregistrer", share:"Partager", calendar:"+ Agenda",
+    saved:"✓ Enregistré", save:"Enregistrer", share:"Partager", calendar:"+ Agenda", openMaps:"Ouvrir la carte ↗",
     tShare:"Partager", tSave:"Enregistrer", tRemove:"Retirer",
     toastRange:"Période : {n}",
     toastCal:"Événement créé — ouvre-le dans ton agenda", toastShare:"Lien copié — s'ouvre même sans l'app",
@@ -1083,7 +1090,8 @@ const EVENTS = [
   addr1:"Neubrückstrasse 8", addr2:"3012 Bern", price:"FREE", lat:46.9528, lng:7.4389, city:"bern", kanton:"BE",
   desc:"Der Flohmi in der Grossen Halle. Platten, Kleider, Fotos, Zeug das man nicht sucht und trotzdem heimnimmt.",
   ig:"https://www.instagram.com/2be.app", seed:"flohmi"},
- {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9,
+ // top:true = der Platz, den das Team von Hand setzt (#112). Genau einer.
+ {id:6, title:"SNABBA", sub:"SUMMER SALE", tags:["fashion"], offset:9, top:true,
  h:12, dur:6,
   addr1:"Sulgenauweg 3", addr2:"3007 Bern", price:null, lat:46.9387, lng:7.4407, city:"bern", kanton:"BE",
   desc:"Summer Sale im Hinterhof. Archive-Pieces und Kaffee.",
@@ -1156,9 +1164,17 @@ try{
   const raw = localStorage.getItem("2be_likes") || localStorage.getItem("2be_rsvp") || "[]";
   state.likes = new Set(JSON.parse(raw));
 }catch(e){}
-// Demo-Basiswerte Likes (später echt aus der Datenbank)
+// Demo-Basiswerte fuer die drei Signale der Plakatsäule (#112). Spaeter kommen sie
+// aus event_stats (#74, #115); im Prototyp sind sie erfunden. Sie stehen fuer die
+// letzten 14 Tage — im Prototyp gibt es kein Zeitfenster, die Zahlen SIND das Fenster.
 const LIKES = {1:14, 2:31, 3:9, 4:12, 5:22, 6:7, 7:11, 8:16, 9:47, 10:26, 11:5,
                12:38, 13:19, 14:52, 15:24};
+// In die eigene Line Up gelegt — das staerkste Signal, weil es Absicht heisst
+const SAVES = {1:6, 2:19, 3:3, 4:5, 5:11, 6:2, 7:4, 8:9, 9:21, 10:12, 11:1,
+               12:27, 13:8, 14:16, 15:14};
+// Aufrufe der Event-Seite. Viel groessere Zahlen — deshalb wird normiert und gedeckelt
+const VIEWS = {1:210, 2:640, 3:95, 4:130, 5:305, 6:60, 7:118, 8:240, 9:980, 10:410,
+               11:44, 12:520, 13:260, 14:1450, 15:330};
 let map, markers = [], tiles = null, firstFeedRender = true;
 
 // ================= Helpers =================
@@ -1388,6 +1404,9 @@ function locateUser(){
     userMarker = L.marker(ll, {interactive:false, zIndexOffset:-500, icon:L.divIcon({
       className:"", html:'<div class="userdot"></div>', iconSize:[14,14], iconAnchor:[7,7]})}).addTo(map);
     map.flyTo(ll, 14, {duration:1.1});
+    // Sonnenzeiten fuer den echten Standort — Genf und St. Gallen liegen rund 12 Minuten auseinander
+    sunPos = {lat:ll[0], lng:ll[1]};
+    if(themeMode === "auto") applyTheme();
   }, ()=>{}, {enableHighAccuracy:false, timeout:8000, maximumAge:300000});
 }
 
@@ -1431,15 +1450,67 @@ function setTiles(){
   });
 }
 
-let themeMode = "light"; // Standard: Tag. Umstellen im Profil, bleibt gespeichert.
-try{ themeMode = localStorage.getItem("2be_theme") || "light"; }catch(e){}
-if(!["light","dark"].includes(themeMode)) themeMode = "light";
+// Standard ist die Automatik: Nacht zwischen Sonnenuntergang und Sonnenaufgang (#67, ersetzt #15).
+// Tag und Nacht bleiben als feste Wahl im Profil. Eigener Speicher-Schluessel, damit ein
+// frueher gespeichertes «Tag» aus der Zeit vor der Automatik sie nicht dauerhaft abschaltet.
+let themeMode = "auto";
+try{ themeMode = localStorage.getItem("2be_theme_mode") || "auto"; }catch(e){}
+if(!["auto","light","dark"].includes(themeMode)) themeMode = "auto";
+
+// Gerechnet wird fuer Bern, bis locateUser() den echten Standort kennt.
+let sunPos = {lat:46.948, lng:7.447};
+let sunTimer = null;
+
+// Sonnenauf- und -untergang am Kalendertag von `date` (Rechenweg von suncalc/NOAA, auf rund
+// eine Minute genau). null, wenn die Sonne an dem Tag gar nicht auf- oder untergeht.
+function sunTimes(date, lat, lng){
+  const rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545;
+  const noon = new Date(date); noon.setHours(12,0,0,0);
+  const d   = noon/dayMs - 0.5 + J1970 - J2000;
+  const lw  = -lng*rad, phi = lat*rad;
+  const n   = Math.round(d - 0.0009 - lw/(2*Math.PI));
+  const ds  = 0.0009 + lw/(2*Math.PI) + n;
+  const M   = rad*(357.5291 + 0.98560028*ds);                                 // mittlere Anomalie
+  const L   = M + rad*(1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M)) + rad*102.9372 + Math.PI;
+  const dec = Math.asin(Math.sin(rad*23.4397)*Math.sin(L));                     // Deklination
+  const transit = J2000 + ds + 0.0053*Math.sin(M) - 0.0069*Math.sin(2*L);       // Sonnenhoechststand
+  const cosW = (Math.sin(-0.833*rad) - Math.sin(phi)*Math.sin(dec)) / (Math.cos(phi)*Math.cos(dec));
+  if(cosW < -1 || cosW > 1) return null;
+  const w = Math.acos(cosW)/(2*Math.PI);
+  const toDate = j => new Date((j + 0.5 - J1970)*dayMs);
+  return {rise: toDate(transit - w), set: toDate(transit + w)};
+}
+// Welches Theme gilt jetzt, und wann kippt es das naechste Mal?
+function sunState(now = new Date()){
+  const today = sunTimes(now, sunPos.lat, sunPos.lng);
+  if(!today) return {theme:"light", next:null};
+  if(now < today.rise) return {theme:"dark",  next:today.rise};
+  if(now < today.set)  return {theme:"light", next:today.set};
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+  const t2 = sunTimes(tomorrow, sunPos.lat, sunPos.lng);
+  return {theme:"dark", next: t2 ? t2.rise : null};
+}
+// Kleine Zeile unter «Erscheinungsbild»: wann die Automatik das naechste Mal wechselt
+function updateThemeHint(sun = sunState()){
+  const el = $("themeHint");
+  if(themeMode !== "auto" || !sun.next){ el.textContent = ""; return; }
+  const hm = _p(sun.next.getHours()) + ":" + _p(sun.next.getMinutes());
+  el.textContent = t(sun.theme === "dark" ? "sunDayFrom" : "sunNightFrom").replace("{t}", hm);
+}
 
 function applyTheme(){
-  const t = themeMode;
-  document.documentElement.dataset.theme = t;
+  clearTimeout(sunTimer);
+  const sun = sunState();
+  const theme = themeMode === "auto" ? sun.theme : themeMode;
+  ["auto","light","dark"].forEach(m => $("tm-"+m).classList.toggle("on", themeMode===m));
+  updateThemeHint(sun);
+  // Naechsten Wechsel vormerken. Im Hintergrund schlaeft der Timer auf dem iPhone —
+  // dafuer rechnet initTheme() beim Zurueckholen der App neu.
+  if(themeMode === "auto" && sun.next) sunTimer = setTimeout(applyTheme, sun.next - Date.now() + 1000);
+  // Unveraendert? Dann die Kacheln nicht neu laden — sonst flackert die Karte bei jedem Zurueckholen
+  if(document.documentElement.dataset.theme === theme) return;
+  document.documentElement.dataset.theme = theme;
   // theme-color bleibt bewusst dunkel — siehe Kommentar im <head>
-  ["light","dark"].forEach(m => $("tm-"+m).classList.toggle("on", themeMode===m));
   if(map){
     setTiles();
     if(markers.length) renderMap();
@@ -1449,10 +1520,15 @@ function applyTheme(){
 }
 function setThemeMode(m){
   themeMode = m;
-  try{ localStorage.setItem("2be_theme", m); }catch(e){}
+  try{ localStorage.setItem("2be_theme_mode", m); }catch(e){}
   applyTheme();
 }
-function initTheme(){ applyTheme(); }
+function initTheme(){
+  applyTheme();
+  document.addEventListener("visibilitychange", () => {
+    if(!document.hidden && themeMode === "auto") applyTheme();
+  });
+}
 
 // ================= Sprache =================
 function applyStaticI18n(){
@@ -1471,6 +1547,7 @@ function setLang(l){
   relabelEvents();
   applyStaticI18n();
   updateLangButtons();
+  updateThemeHint();
   renderAll();
   if($("catPick")) renderPicks();
   if($("submit").classList.contains("open") && subStep===3) renderPreview();
@@ -1719,13 +1796,22 @@ function renderDetail(id){
         <button onclick="calExport(${e.id})">${t('calendar')}</button>
         <a href="${e.ig}" target="_blank" rel="noopener">Instagram ↗</a>
       </div>
-      <div class="d-map" id="dmap"></div>
-      <div class="d-maps">
-        <a href="https://maps.apple.com/?q=${encodeURIComponent(e.title)}&ll=${e.lat},${e.lng}" target="_blank" rel="noopener">Apple Maps</a>
-        <a href="https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}" target="_blank" rel="noopener">Google Maps</a>
-      </div>
+      <a class="d-map-link" href="${mapsUrl(e)}" target="_blank" rel="noopener" aria-label="${t('openMaps')}">
+        <div class="d-map" id="dmap"></div>
+        <span class="d-map-hint">${t('openMaps')}</span>
+      </a>
     </div>`;
   initDetailMap(e);
+}
+
+// Tipp auf den Kartenausschnitt (#100): Apple-Geraete oeffnen Apple Karten, alle anderen
+// Google Maps. iPads melden sich in Safari als «Macintosh», deshalb zaehlt das mit.
+// Als Funktion statt Konstante: ein geteilter Link kann das Detail schon beim Laden oeffnen.
+function isAppleDevice(){ return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent); }
+function mapsUrl(e){
+  return isAppleDevice()
+    ? `https://maps.apple.com/?q=${encodeURIComponent(e.title)}&ll=${e.lat},${e.lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}`;
 }
 
 // Statischer Kartenausschnitt im Detail: nicht verschiebbar, nicht zoombar.
@@ -2360,269 +2446,679 @@ function resetLocal(){
   toast(t("resetDone"));
 }
 
-// ================= Plakatsäule (3D — three.js Colonne Morris) =================
+// ================= Plakatsäule (3D — Colonne Morris mit Plakat-Mantel) =================
+// Die Säule STEHT, die Plakate wandern (#113). Das ist der Unterschied zu v15: dort
+// drehte sich die Geometrie, hier läuft die Textur um einen stehenden Zylinder — nur so
+// lässt sich wischen und einrasten, ohne dass eine Dauerdrehung dagegen arbeitet.
+// Tagsüber ist der Mantel bedrucktes Papier, nachts ein LED-Screen (#114); dazwischen
+// blendet ein Shader über, gesteuert vom Erscheinungsbild der App (#67).
 const THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
-let saOpen=false, saReady=false, saRaf=null;
-let saScene, saCam, saRenderer, saGroup, saPosters=[], saActions=[];
-let saHost = null;   // Element, in dem die Saeule gerade steckt (Overlay oder 2BE-Tab)
-let saVel=0.0012, saDragging=false, saMoved=false, saLastX=0, saDownX=0, saDownY=0;
-let saCamDist=12.5, saTargetY=3.0;
-let saPtrs=new Map(), saPinchD=0, saLastTouch=-1e6;
-// Masse der Säule — hier jederzeit anpassen:
-const SA_RADIUS=1.0;       // Korpus-Radius
-const SA_BODY_H=3.0;       // Korpus-Höhe
-const SA_DOME_SCALE=1.0;   // Kuppel-Streckung (1 = Original, <1 = flacher/runder)
-const SA_IDLE_SPEED=0.0012;// Ruhe-Drehtempo (langsam); 0.004 war vorher
-const SA_IDLE_DELAY=3000;  // ms nach letzter Berührung, bis die Säule wieder dreht
 
-function saPicks(){ return EVENTS.filter(e => e.end > new Date()).sort((a,b)=>a.start-b.start).slice(0,6); }
+// ---- Was auf die Säule kommt (#112) — Zahlen hier jederzeit anpassen ----
+const CM_W_SAVE=0.50, CM_W_LIKE=0.30, CM_W_VIEW=0.20; // Absicht zählt mehr als Applaus
+const CM_WINDOW_DAYS=14;   // gilt erst mit echten Zahlen — im Prototyp sind die Demo-Werte das Fenster
+const CM_SLOTS=7;          // Events auf der Säule: 1 Team-Platz + 6 aus der Community
+const CM_VIEW_CAP=3;       // Deckel: Aufrufe zählen höchstens das Dreifache des Medians
 
-function saWrap(g,text,x,y,maxW,lh,align){
-  g.textAlign = align || "center";
-  const words=(text||"").split(" "); let line="", yy=y;
-  for(const w of words){
-    const test = line ? line+" "+w : w;
-    if(g.measureText(test).width>maxW && line){ g.fillText(line,x,yy); line=w; yy+=lh; }
-    else line=test;
-  }
-  if(line) g.fillText(line,x,yy);
-  return yy;
+// ---- Masse der Säule (#113) — CM_R=1 ist die Einheit, alles hängt daran ----
+const CM_R=1.0;            // Radius des Korpus
+const CM_ARC=118;          // Grad, die ein Plakat auf der Rundung einnimmt. Mehr Grad = breiter
+                           // im Bild, aber auch höher, weil die Zelle quadratisch bleibt.
+                           // Die UV-Naht liegt hinten und ist nie zu sehen, darum muss
+                           // 360/CM_ARC nicht aufgehen
+const CM_CELLS=4;          // Zellen je Band: unten drei Plakate + Tür, oben vier Plakate
+const CM_CELL=448;         // Kantenlänge einer Zelle im Atlas (4 × 448 = 1792 px, klein fürs iPhone)
+const CM_ORN=0.22;         // Ornamentband zwischen den beiden Plakaten
+const CM_BASE=0.46;        // Sockelhöhe
+const CM_CORN=0.26;        // Gesims
+const CM_DOME=0.55;        // Streckung der Kuppel (1 = Original; kleiner = gedrungener)
+const CM_AIR=0.55;         // Luft unter dem Sockel, damit man die Spiegelung ahnt
+const CM_GRID=100;         // LED-Punkte über die Breite einer Zelle
+const CM_IDLE=4000;        // ms Ruhe, bis der Hinweis-Peek kommt
+const CM_IDLE_EVERY=8000;  // ms zwischen zwei Peeks
+const CM_BAND_H = 2*Math.PI*CM_R*(CM_ARC/360);   // Bandhöhe = Bogenlänge, damit die Zelle quadratisch ist
+
+let saOpen=false, saReady=false, saRaf=null, saHost=null;
+let saScene, saCam, saRenderer;
+let cmScroll=0, cmTarget=0, cmIdx=-1, cmShown=0;   // cmShown = was gerade wirklich im Bild steht
+let cmNight=1, cmNightT=1, cmLastTouch=-1e6, cmLast=null;
+let cmBands=[], cmCells={bottom:[],top:[]}, cmBuiltLang=null;
+let cmUni=[], cmOrnUni=null, cmGlowUni=null, cmFloor=null, cmMirror=null;
+let cmShadow=null, cmHemi=null, cmKey=null, cmGndDay=null, cmGndNight=null, cmEnv=null;
+// Richtung zur Lampe, die Sockel und Kuppel formt. Der Mantel bekommt sie seit v17
+// als Uniform, damit er im selben Licht steht wie alles darueber und darunter.
+const cmLightDir = () => new THREE.Vector3(6,11,8).normalize();
+let cmImgCache=new Map();
+
+/* ---------------- Auswahl: was die Community nach oben trägt ---------------- */
+// Im Prototyp sind SAVES/LIKES/VIEWS Demo-Zahlen. Echt kommen sie aus event_stats
+// (#74, #115) — die Formel unten bleibt dieselbe, nur die Quelle wechselt.
+function cmScoreTable(pool){
+  const val=(tab,e)=> (tab[e.id]||0);
+  const vs = pool.map(e=>val(VIEWS,e)).sort((a,b)=>a-b);
+  const med = vs.length ? vs[Math.floor(vs.length/2)] : 0;
+  const cap = med>0 ? med*CM_VIEW_CAP : Infinity;      // Ausreisser kappen
+  const capped = e => Math.min(val(VIEWS,e), cap);
+  const mx = (f) => Math.max(1, ...pool.map(f));
+  const maxS=mx(e=>val(SAVES,e)), maxL=mx(e=>val(LIKES,e)), maxV=mx(capped);
+  // Jedes Signal auf 0–1 normiert, sonst erschlägt die Aufruf-Zahl die Like-Zahl
+  return e => CM_W_SAVE*(val(SAVES,e)/maxS)
+            + CM_W_LIKE*(val(LIKES,e)/maxL)
+            + CM_W_VIEW*(capped(e)/maxV);
 }
-// Ein Plakat als Canvas (echte Event-Daten, Tag/Nacht-getönt)
-function saPoster(a){
-  const W=256, H=768, c=document.createElement("canvas"); c.width=W; c.height=H;
-  const g=c.getContext("2d"); const dark = currentTheme()==="dark";
-  if(a.type==="branding"){
-    g.fillStyle="#7D39EB"; g.fillRect(0,0,W,H);
-    g.fillStyle="#fff"; g.textAlign="center";
-    g.font="800 128px Helvetica,Arial"; g.fillText("2BE",W/2,H*0.44);
-    g.font="600 30px Helvetica,Arial";
-    g.fillText("Showing you",W/2,H*0.58); g.fillText("the places 2 be",W/2,H*0.63);
-    return c;
+function cmPicks(){
+  const now=new Date();
+  const pool = EVENTS.filter(e => e.end > now);       // nichts Vergangenes auf die Säule
+  if(!pool.length) return [];
+  const score = cmScoreTable(pool);
+  const out=[], venues=new Set();
+  const team = pool.find(e => e.top);                 // Platz 1 setzt das Team von Hand
+  if(team){ out.push(team); venues.add(team.addr1); }
+  for(const e of pool.slice().sort((a,b)=>score(b)-score(a))){
+    if(out.length >= CM_SLOTS) break;
+    if(out.includes(e)) continue;
+    if(venues.has(e.addr1)) continue;                 // höchstens ein Plakat pro Veranstalter
+    out.push(e); venues.add(e.addr1);
   }
-  // (Tür wird als 3D-Nische modelliert — siehe saAddDoor, nicht als flaches Plakat)
-  const e=a.ev;
-  g.fillStyle=dark?"#cdbf9f":"#efe7d2"; g.fillRect(0,0,W,H);
-  g.fillStyle="rgba(70,52,32,.05)";
-  for(let i=0;i<22;i++){ g.beginPath(); g.arc(Math.random()*W,Math.random()*H,Math.random()*40,0,7); g.fill(); }
-  const col=CATCOLORS[e.tags[0]]||CATCOLORS.other;
-  g.fillStyle=col; g.fillRect(0,0,W,120);
-  g.fillStyle=(col==="#FFE01A")?"#111":"#fff";
-  g.textAlign="left"; g.font="800 32px Helvetica,Arial";
-  g.fillText(catLabel(e.tags[0]).toUpperCase(),24,74);
-  g.fillStyle="#1a1712"; g.font="800 46px Helvetica,Arial";
-  let y=saWrap(g,e.title.toUpperCase(),24,214,W-48,50,"left");
-  g.fillStyle="#6d6250"; g.font="600 26px Helvetica,Arial";
-  g.fillText(e.sub.toUpperCase(),24,y+36);
-  g.strokeStyle="#C9BD9F"; g.lineWidth=2; g.beginPath(); g.moveTo(24,H-158); g.lineTo(W-24,H-158); g.stroke();
-  g.fillStyle="#1a1712"; g.font="800 26px Helvetica,Arial"; g.fillText(e.day,24,H-108);
-  g.fillStyle="#3a352c"; g.font="600 23px Helvetica,Arial";
-  g.fillText(e.date+" · "+e.time.split(" ")[0],24,H-70);
-  return c;
+  return out;
+}
+// Acht Zellen: unten Rang 1, 3, 5 und die Tür — oben Rang 2, 4, 6, 7.
+// Ein Wisch bringt also immer ein Paar, vier Wische eine volle Umdrehung.
+function cmLayout(){
+  const p = cmPicks();
+  const cell = i => p[i] ? {type:"event", ev:p[i]} : {type:"brand"};
+  return {
+    bottom:[ cell(0), cell(2), cell(4), {type:"door"} ],
+    top:   [ cell(1), cell(3), cell(5), cell(6) ]
+  };
 }
 
-// Gekrümmtes Plakat (Zylinder-Segment, folgt der Rundung) — von aussen lesbar
-function saCurved(canvas,ang,arc,h,radius){
-  const T=THREE;
-  const tex=new T.CanvasTexture(canvas); tex.anisotropy=4;
-  const geo=new T.CylinderGeometry(radius,radius,h,24,1,true,ang-arc/2,arc);
-  return new T.Mesh(geo,new T.MeshStandardMaterial({map:tex,roughness:.9,metalness:0,side:T.FrontSide}));
+/* ---------------- Eine Zelle zeichnen: das Polaroid (#59, #60) ---------------- */
+// Text, der in die Breite passen muss — zu lange Titel bekommen ein Auslassungszeichen
+function cmFit(g,text,maxW){
+  let s=(text||"");
+  if(g.measureText(s).width<=maxW) return s;
+  while(s.length>1 && g.measureText(s+"…").width>maxW) s=s.slice(0,-1);
+  return s+"…";
 }
-// Türblatt-Textur (Holz mit Kassetten + Knauf, kein Text)
-function saDoorLeaf(){
-  const W=256,H=768,c=document.createElement("canvas");c.width=W;c.height=H;
-  const g=c.getContext("2d");const dark=currentTheme()==="dark";
-  g.fillStyle=dark?"#20170d":"#6b4f2c";g.fillRect(0,0,W,H);
-  g.strokeStyle="rgba(0,0,0,.5)";g.lineWidth=8;g.strokeRect(8,8,W-16,H-16);
-  const cols=2,rows=3,pad=22,dx=22,dy=22,dw=W-44,dh=H-44;
-  const pw2=(dw-(cols+1)*pad)/cols, ph2=(dh-(rows+1)*pad)/rows;
-  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
-    const x=dx+pad+cc*(pw2+pad), y=dy+pad+r*(ph2+pad);
-    g.fillStyle=dark?"#161009":"#553f20";g.fillRect(x,y,pw2,ph2);
-    g.strokeStyle="rgba(0,0,0,.4)";g.lineWidth=3;g.strokeRect(x,y,pw2,ph2);
-    g.strokeStyle="rgba(255,255,255,.06)";g.lineWidth=1;g.strokeRect(x+3,y+3,pw2-6,ph2-6);
-  }
-  g.fillStyle="#7D39EB";g.beginPath();g.arc(W-40,H/2,12,0,7);g.fill(); // Knauf
-  return c;
+// Bild formatfüllend in ein Fenster, ohne zu verzerren
+function cmCover(g,im,x,y,w,h){
+  const r = Math.max(w/im.width, h/im.height);
+  const dw = im.width*r, dh = im.height*r;
+  g.save(); g.beginPath(); g.rect(x,y,w,h); g.clip();
+  g.drawImage(im, x+(w-dw)/2, y+(h-dh)/2, dw, dh); g.restore();
 }
-// Schild über der Tür (Violett, „GET LISTED" + Hinweis)
-function saDoorSign(){
-  const W=512,H=132,c=document.createElement("canvas");c.width=W;c.height=H;
+// Der Polaroid-Rahmen: quadratisch, Bild 4:3 quer, unten der breite Rand (#59, #60).
+// Bewusst OHNE Tag/Nacht-Tönung — die macht der Shader, sonst müsste der Atlas bei
+// jedem Themawechsel neu gebaut werden.
+// Die Zelle wird auf dem Gerät auf rund ein Drittel verkleinert — deshalb ist die
+// Schrift hier absichtlich gross. Was auf einer Listen-Card Platz hat, ist auf der
+// Säule unleserlich.
+const CM_PAD=20, CM_IMGW=CM_CELL-2*CM_PAD, CM_IMGH=Math.round((CM_CELL-2*CM_PAD)*3/4);
+const CM_IMGY=60;   // unter der Kopfzeile mit Datum und Zeit
+function cmPolaroid(ev){
+  const c=document.createElement("canvas"); c.width=c.height=CM_CELL;
   const g=c.getContext("2d");
-  g.fillStyle="#7D39EB";g.fillRect(0,0,W,H);
-  g.fillStyle="#fff";g.textAlign="center";
-  g.font="800 54px Helvetica,Arial";g.fillText(t("doorSign"),W/2,56);
-  g.font="600 26px Helvetica,Arial";g.fillText(t("doorHint"),W/2,100);
+  g.fillStyle="#F4F1E8"; g.fillRect(0,0,CM_CELL,CM_CELL);
+
+  // Kopfzeile: links Datum (bei Pop-ups der Zeitraum), rechts die Zeit — wie in der Liste
+  const dnum = d => _p(d.getDate())+"."+_p(d.getMonth()+1)+".";
+  const head = ev.art==="popup" ? dnum(ev.start)+" – "+dnum(ev.end)
+                                : DAYS_SHORT[LANG][ev.start.getDay()]+" "+dnum(ev.start);
+  g.fillStyle="#6A6257"; g.font="700 30px Helvetica,Arial";
+  g.textAlign="left";  g.fillText(head, CM_PAD, CM_PAD+24);
+  g.textAlign="right"; g.fillText((ev.time||"").split(" ")[0], CM_CELL-CM_PAD, CM_PAD+24);
+
+  // Das Bild im 4:3-Fenster (#59) — formatfüllend, wie der gespeicherte Ausschnitt
+  const im = cmImgCache.get(ev.id);
+  if(im) cmCover(g,im,CM_PAD,CM_IMGY,CM_IMGW,CM_IMGH);
+  else { g.fillStyle="#DCD7CA"; g.fillRect(CM_PAD,CM_IMGY,CM_IMGW,CM_IMGH); }
+
+  // Badge oben links im Bild: LIVE, Restlaufzeit eines Pop-ups oder der Countdown
+  const live = isLive(ev);
+  const badge = live ? "LIVE" : (runBadge(ev) || soonLabel(ev));
+  if(badge){
+    g.textAlign="left"; g.font="800 26px Helvetica,Arial";
+    const bw=g.measureText(badge).width+30;
+    g.fillStyle = live ? "#7D39EB" : "#141210";
+    g.fillRect(CM_PAD, CM_IMGY+14, bw, 42);
+    g.fillStyle="#fff"; g.fillText(badge, CM_PAD+15, CM_IMGY+43);
+  }
+
+  // Bildunterschrift: Kategoriepunkt, Titel, Ort
+  const capY = CM_IMGY+CM_IMGH;
+  g.fillStyle = CATCOLORS[ev.tags[0]]||CATCOLORS.other;
+  g.beginPath(); g.arc(CM_PAD+13, capY+31, 11, 0, 7); g.fill();
+  g.textAlign="left";
+  g.fillStyle="#141210"; g.font="800 40px Helvetica,Arial";
+  g.fillText(cmFit(g, ev.title, CM_IMGW-38), CM_PAD+36, capY+42);
+  g.fillStyle="#6A6257"; g.font="600 28px Helvetica,Arial";
+  g.fillText(cmFit(g, ev.addr1, CM_IMGW-38), CM_PAD+36, capY+75);
   return c;
 }
-// Eingelassene Tür-Nische (geht in die Säule hinein)
-function saAddDoor(gr,ang,arc,dBot,dTop,R,matAcc,matDark){
-  const T=THREE;
-  const dH=dTop-dBot, yMid=(dBot+dTop)/2, rIn=R-0.18;
-  const halfChord=rIn*Math.sin(arc/2), rMid=(R+rIn)/2;
-  // dunkle Rückwand hinter dem Türblatt
-  const back=new T.Mesh(new T.CylinderGeometry(rIn-0.03,rIn-0.03,dH,20,1,true,ang-arc/2,arc),matDark);
-  back.position.y=yMid; gr.add(back);
-  // seitliche Laibungen (radiale Wände)
-  [-1,1].forEach(s=>{
-    const ea=ang+s*arc/2;
-    const jamb=new T.Mesh(new T.BoxGeometry(0.03,dH,R-rIn),matDark);
-    jamb.position.set(Math.sin(ea)*rMid,yMid,Math.cos(ea)*rMid); jamb.rotation.y=ea; gr.add(jamb);
-  });
-  // Sturz oben & Schwelle unten (schliessen die Nische)
-  const head=new T.Mesh(new T.BoxGeometry(2*halfChord+0.06,0.07,R-rIn),matDark);
-  head.position.set(Math.sin(ang)*rMid,dTop-0.035,Math.cos(ang)*rMid); head.rotation.y=ang; gr.add(head);
-  const sill=new T.Mesh(new T.BoxGeometry(2*halfChord+0.06,0.06,R-rIn),matAcc); // violette Schwelle
-  sill.position.set(Math.sin(ang)*rMid,dBot+0.03,Math.cos(ang)*rMid); sill.rotation.y=ang; gr.add(sill);
-  // Türblatt (zurückversetzt, leicht offen)
-  const leaf=new T.Mesh(new T.PlaneGeometry(2*halfChord*0.96,dH-0.14),
-    new T.MeshStandardMaterial({map:new T.CanvasTexture(saDoorLeaf()),roughness:.85,metalness:0,side:T.DoubleSide}));
-  leaf.position.set(Math.sin(ang)*rIn,yMid,Math.cos(ang)*rIn); leaf.rotation.y=ang-0.12; // angelehnt
-  leaf.userData.action={type:"submit"}; gr.add(leaf); saPosters.push(leaf);
-  // Schild an der Aussenfläche über der Tür
-  const sign=saCurved(saDoorSign(),ang,arc,0.52,R+0.012);
-  sign.position.y=dTop+0.30; sign.userData.action={type:"submit"}; gr.add(sign); saPosters.push(sign);
+// Die Tür: eine Zelle wie die Plakate, aber als eingelassenes Türblatt gezeichnet.
+// Sie liegt fest als vierte Zelle des unteren Bandes — man findet sie also immer nach
+// drei Wischen, statt wie früher die halbe Säule drehen zu müssen.
+function cmDoorCell(){
+  const c=document.createElement("canvas"); c.width=c.height=CM_CELL;
+  const g=c.getContext("2d"), W=CM_CELL;
+  g.fillStyle="#141B14"; g.fillRect(0,0,W,W);                       // Nische
+  const dx=54, dy=26, dw=W-108, dh=W-52;
+  g.fillStyle="rgba(0,0,0,.55)"; g.fillRect(dx-10,dy-8,dw+20,dh+16); // Laibung, Tiefe
+  g.fillStyle="#6B4F2C"; g.fillRect(dx,dy,dw,dh);                    // Türblatt
+  g.strokeStyle="rgba(0,0,0,.5)"; g.lineWidth=6; g.strokeRect(dx+5,dy+5,dw-10,dh-10);
+  const pad=16, cols=2, rows=3;
+  const pw=(dw-2*pad-(cols-1)*pad)/cols, ph=(dh-2*pad-(rows-1)*pad)/rows;
+  for(let r=0;r<rows;r++) for(let cc=0;cc<cols;cc++){
+    const x=dx+pad+cc*(pw+pad), y=dy+pad+r*(ph+pad);
+    g.fillStyle="#553F20"; g.fillRect(x,y,pw,ph);
+    g.strokeStyle="rgba(0,0,0,.45)"; g.lineWidth=3; g.strokeRect(x,y,pw,ph);
+    g.strokeStyle="rgba(255,255,255,.07)"; g.lineWidth=1; g.strokeRect(x+3,y+3,pw-6,ph-6);
+  }
+  g.fillStyle="#7D39EB"; g.beginPath(); g.arc(dx+dw-26, W/2, 11, 0, 7); g.fill();  // Knauf
+  // Schild über der Tür — auch hier gilt: auf dem Gerät wird alles dreimal kleiner
+  g.fillStyle="#7D39EB"; g.fillRect(dx-10, 0, dw+20, 92);
+  g.fillStyle="#fff"; g.textAlign="center";
+  g.font="800 42px Helvetica,Arial"; g.fillText(t("doorSign"), W/2, 44);
+  g.font="600 24px Helvetica,Arial"; g.fillText(cmFit(g, t("doorHint"), dw), W/2, 78);
+  return c;
+}
+function cmBrandCell(){
+  const c=document.createElement("canvas"); c.width=c.height=CM_CELL;
+  const g=c.getContext("2d");
+  g.fillStyle="#7D39EB"; g.fillRect(0,0,CM_CELL,CM_CELL);
+  g.fillStyle="#fff"; g.textAlign="center";
+  g.font="800 116px Helvetica,Arial"; g.fillText("2BE", CM_CELL/2, CM_CELL*0.50);
+  g.font="600 30px Helvetica,Arial";
+  g.fillText("Showing you", CM_CELL/2, CM_CELL*0.64);
+  g.fillText("the places 2 be", CM_CELL/2, CM_CELL*0.72);
+  return c;
 }
 
+/* ---------------- Atlas: vier Zellen nebeneinander, ein Band ---------------- */
+function cmDrawAtlas(cells){
+  const cv=document.createElement("canvas");
+  cv.width=CM_CELLS*CM_CELL; cv.height=CM_CELL;
+  const g=cv.getContext("2d");
+  cells.forEach((cell,i)=>{
+    const src = cell.type==="door" ? cmDoorCell()
+              : cell.type==="brand" ? cmBrandCell()
+              : cmPolaroid(cell.ev);
+    g.drawImage(src, i*CM_CELL, 0);
+  });
+  return cv;
+}
+// Flyer laden, dann beide Bänder zeichnen. Bilder werden gemerkt, damit ein
+// Sprachwechsel nicht jedes Mal neu lädt.
+function cmAtlases(cells, cb){
+  const evs = [...cells.bottom, ...cells.top].filter(c=>c.type==="event").map(c=>c.ev);
+  const todo = evs.filter(e => !cmImgCache.has(e.id));
+  let left = todo.length;
+  const done = ()=> cb(cmDrawAtlas(cells.bottom), cmDrawAtlas(cells.top));
+  if(!left) return done();
+  todo.forEach(e=>{
+    const im=new Image(); im.crossOrigin="anonymous";
+    const fin=()=>{ if(--left===0) done(); };
+    im.onload =()=>{ cmImgCache.set(e.id, im); fin(); };
+    im.onerror=()=>{ fin(); };   // ohne CORS bleibt das Bildfenster leer statt kaputt
+    im.src = e.img || ("https://picsum.photos/seed/"+e.seed+"/640/480?grayscale");
+  });
+}
+
+/* ---------------- Shader: Papier am Tag, LED in der Nacht (#114) ---------------- */
+const CM_VERT = `
+varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+void main(){
+  vUv = uv;
+  vec4 wp = modelMatrix * vec4(position,1.0);
+  vN = normalize(mat3(modelMatrix) * normal);
+  vV = normalize(cameraPosition - wp.xyz);
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}`;
+
+const CM_FRAG = `
+precision highp float;
+uniform sampler2D uMap;
+uniform float uCount, uPerTurn, uScroll, uNight, uBezel, uGridX, uGridY, uMirror, uTime, uDoorIx, uBounce;
+uniform vec3 uLight;
+varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+
+void main(){
+  // Position auf dem endlos umlaufenden Band, in Zell-Einheiten
+  float g    = (vUv.x - 0.5) * uPerTurn + uScroll + 0.5;
+  float cell = floor(g);
+  float f    = fract(g);
+
+  float inner = (f - uBezel*0.5) / (1.0 - uBezel);
+  float gap   = step(inner, 0.0) + step(1.0, inner);   // Fuge zwischen zwei Zellen
+  float ix    = mod(cell, uCount);
+  vec2  auv   = vec2((ix + clamp(inner,0.0,1.0)) / uCount, vUv.y);
+
+  vec3 N = normalize(vN) * (gl_FrontFacing ? 1.0 : -1.0);
+  float fres = clamp(dot(N, normalize(vV)), 0.0, 1.0);   // wie schräg schaut man drauf
+  vec3 raw = texture2D(uMap, auv).rgb;
+
+  // ---------- Tag: bedrucktes Papier ----------
+  vec3 pap = raw;
+  pap += (hash(floor(auv*1600.0)) - 0.5) * 0.085;            // Korn
+  pap += (hash(floor(auv*vec2(60.0,1100.0))) - 0.5) * 0.05;  // Fasern, längs
+  pap *= vec3(1.030, 1.000, 0.955);                          // leicht vergilbt
+  // Licht von schräg oben rechts — dieselbe Lampe, die Sockel, Gesims und Kuppel
+  // formt. Bis v16 rechnete der Mantel nur mit dem Blickwinkel: links und rechts
+  // gleich hell, also flach, während alles darüber und darunter plastisch war.
+  // Wrap-Licht (0.5+0.5) statt hartem Lambert, weil Papier das Licht weich streut.
+  float lam    = clamp(dot(N, uLight)*0.5 + 0.5, 0.0, 1.0);
+  float pshade = mix(0.42, 1.02, pow(fres, 0.55));   // die Rundung wie in v16
+  pshade *= mix(0.72, 1.16, pow(lam, 1.10));         // dazu die Lampe von oben rechts
+  // Weiche Verschattung, wo Sockel, Ornamentband und Gesims anschliessen. Eng
+  // gehalten: die Bildunterschrift liegt nur sieben Pixel über der Blattkante.
+  float ao = mix(0.74, 1.0, smoothstep(0.0,0.045,vUv.y))
+           * mix(0.76, 1.0, 1.0 - smoothstep(0.94,1.0,vUv.y));
+  // Der warme Boden wirft Licht zurück — vor allem auf das untere Blatt
+  vec3 bounce = vec3(0.30,0.26,0.19) * (1.0 - smoothstep(0.0,0.30,vUv.y)) * 0.26 * lam * uBounce;
+  float pEdge  = smoothstep(0.0,0.035,inner) * (1.0 - smoothstep(0.965,1.0,inner));
+  pap = pap * pshade * mix(0.66, 1.0, pEdge) * ao + bounce;  // Blattkante wirft Schatten
+  pap = mix(pap, vec3(0.16,0.15,0.14), gap);
+
+  // ---------- Nacht: LED-Mantel ----------
+  vec2 grid   = vec2(uGridX*uCount, uGridY);
+  vec2 cellUv = auv*grid;
+  vec3 led = texture2D(uMap, (floor(cellUv)+0.5)/grid).rgb;  // Farbe pro Leuchtpunkt
+  vec2 fp = fract(cellUv);
+  float d = max(abs(fp.x-0.5), abs(fp.y-0.5)) * 2.0;
+  float dot_ = mix(0.68, 1.0, 1.0 - smoothstep(0.78, 1.0, d));
+  float px = max(fwidth(cellUv.x), fwidth(cellUv.y));
+  dot_ = mix(dot_, 1.0, smoothstep(0.30, 0.85, px));         // aus der Ferne verschmelzen sie
+  float s3 = floor(fp.x*3.0);                                 // RGB-Subpixel
+  vec3 sub = mix(vec3(1.10,0.95,0.95), vec3(0.95,1.10,0.95), step(0.5,s3));
+  sub = mix(sub, vec3(0.95,0.95,1.10), step(1.5,s3));
+  led *= mix(vec3(1.0), sub, 0.30);
+  led += (hash(floor(cellUv)) - 0.5) * 0.045;                 // Panel-Unregelmässigkeit, fix
+  float view = mix(0.26, 1.0, pow(fres, 0.62));               // Abstrahlwinkel
+  // Ein Scan, der alle neun Sekunden einmal durchläuft — der Screen lebt
+  float scan = 0.06 * (1.0 - smoothstep(0.0, 0.03, abs(fract(uTime*0.11) - vUv.y)));
+  led *= dot_ * view * 1.45;
+  led += scan;
+  led = mix(led, vec3(0.035,0.035,0.045), gap);
+
+  float k = smoothstep(0.35, 0.75, uNight);
+  vec3 col = mix(pap, led, k);
+
+  // Die Tür ist Holz, kein Screen: sie bleibt matt und fängt nur das Streulicht
+  // der Plakate neben ihr — sonst würde die Nische nachts mitleuchten.
+  if(uDoorIx >= 0.0 && abs(ix - uDoorIx) < 0.5){
+    vec3 wood = raw * mix(0.40, 1.0, pow(fres, 0.55));
+    wood += vec3(0.30,0.24,0.46) * 0.13 * k * pow(fres, 0.5);
+    col = mix(wood, vec3(0.10,0.10,0.11), gap);
+  }
+
+  float edge = smoothstep(0.0,0.012,vUv.y) * (1.0 - smoothstep(0.988,1.0,vUv.y));
+  col *= mix(0.12, 1.0, edge);                                // Gehäusekante oben/unten
+
+  float a = 1.0;
+  if(uMirror > 0.5){                                          // Spiegelung auf dem Boden
+    a = smoothstep(0.0, 0.55, vUv.y) * 0.20 * k;
+    col *= 0.9;
+  }
+  gl_FragColor = vec4(col, a);
+}`;
+
+// Ornamentband: matt, nie digital — der alte Teil zwischen den beiden Plakaten
+const CM_ORN_FRAG = `
+precision highp float;
+uniform sampler2D uMap; uniform float uHasMap, uNight; uniform vec3 uLight;
+varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+void main(){
+  vec3 N = normalize(vN) * (gl_FrontFacing ? 1.0 : -1.0);
+  float f = clamp(dot(N, normalize(vV)), 0.0, 1.0);
+  float lam = clamp(dot(N, uLight)*0.5 + 0.5, 0.0, 1.0);
+  vec3 base = mix(vec3(0.30,0.28,0.25), vec3(0.105,0.103,0.115), uNight);
+  if(uHasMap > 0.5) base = texture2D(uMap, vUv).rgb;
+  // Am Tag formt dieselbe Lampe das Band wie die Plakate darueber und darunter —
+  // sonst haengt ein flacher Ring zwischen zwei plastischen Blaettern. Nachts bleibt
+  // es bei den Werten von v16: matt, nur Streulicht.
+  float day   = mix(0.30, 1.0, pow(f, 0.70)) * mix(0.70, 1.18, pow(lam, 1.10));
+  float shade = mix(day, mix(0.30, 1.0, pow(f, 0.70)), uNight);
+  float spill = (1.0 - smoothstep(0.0, 0.34, vUv.y)) + smoothstep(0.66, 1.0, vUv.y);
+  vec3 col = base*shade + vec3(0.46,0.38,0.66) * spill * 0.16 * mix(0.10,1.0,uNight) * shade;
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+// Lichthof — nur nachts sichtbar
+const CM_GLOW_FRAG = `
+precision highp float;
+uniform float uNight; uniform vec3 uCol;
+varying vec3 vN; varying vec3 vV;
+void main(){
+  vec3 N = normalize(vN) * (gl_FrontFacing ? 1.0 : -1.0);
+  float rim = 1.0 - abs(dot(N, normalize(vV)));
+  float a = pow(rim, 2.2) * mix(0.0, 0.42, smoothstep(0.25,0.85,uNight));
+  gl_FragColor = vec4(uCol * a, a);
+}`;
+
+/* ---------------- Die Säule bauen ---------------- */
+function cmBandMesh(tex, y, doorIx, bounce){
+  const T=THREE;
+  const uni = {
+    uMap:{value:tex}, uCount:{value:CM_CELLS}, uPerTurn:{value:360/CM_ARC},
+    uScroll:{value:cmScroll}, uNight:{value:cmNight}, uBezel:{value:0.014},
+    uGridX:{value:CM_GRID}, uGridY:{value:CM_GRID}, uMirror:{value:0},
+    uTime:{value:0}, uDoorIx:{value:doorIx},
+    uLight:{value:cmLightDir()}, uBounce:{value:bounce}
+  };
+  const mesh = new T.Mesh(
+    new T.CylinderGeometry(CM_R, CM_R, CM_BAND_H, 200, 1, true),
+    new T.ShaderMaterial({uniforms:uni, vertexShader:CM_VERT, fragmentShader:CM_FRAG,
+      side:T.FrontSide, extensions:{derivatives:true}}));
+  mesh.rotation.y = Math.PI;      // UV-Naht nach hinten
+  mesh.position.y = y;
+  cmUni.push(uni);
+  return {mesh, uni};
+}
 function saBuildColumn(){
   const T=THREE;
-  if(saGroup) saScene.remove(saGroup);
-  const gr=new T.Group();
+  cmUni=[]; cmBands=[];
+  cmCells = cmLayout(); cmBuiltLang = LANG;
+
+  // envMapIntensity: wie stark die kleine Umgebung aus saBuild() sich spiegelt.
+  // Ohne sie blieb das Metall fast schwarz — am Tag wirkten die violetten Akzente
+  // wie flacher Lack statt wie Metall.
   const matBody=new T.MeshStandardMaterial({color:0x23402f,roughness:.6,metalness:.15});
   const matDome=new T.MeshStandardMaterial({color:0x2f6b57,roughness:.4,metalness:.3});
-  const matAcc =new T.MeshStandardMaterial({color:0x7D39EB,roughness:.35,metalness:.85}); // Violett-Akzent
-  const matDark=new T.MeshStandardMaterial({color:0x121a12,roughness:.95,metalness:0,side:T.DoubleSide}); // Nische innen
-  const R=SA_RADIUS, BH=SA_BODY_H;
-  const b1=new T.Mesh(new T.CylinderGeometry(1.32,1.42,.22,48),matBody); b1.position.y=.11; gr.add(b1);
-  const b2=new T.Mesh(new T.CylinderGeometry(1.14,1.32,.20,48),matBody); b2.position.y=.32; gr.add(b2);
-  const b3=new T.Mesh(new T.CylinderGeometry(R+.03,1.14,.14,48),matAcc); b3.position.y=.49; gr.add(b3);
-  const baseTop=.56, bodyTop=baseTop+BH;
+  // three.js rechnet Metall fast nur aus Spiegelungen. Ohne etwas zum Spiegeln blieben
+  // Ring, Kugel und Finial dunkler Lack statt Metall — siehe die Umgebung in saBuild().
+  const matAcc =new T.MeshStandardMaterial({color:0x7D39EB,roughness:.35,metalness:.85,
+    envMap:cmEnv, envMapIntensity:.95});
 
-  // Aktionen + Winkel
-  saPosters=[]; saActions=[];
-  saPicks().forEach(e=>saActions.push({type:"event",ev:e,id:e.id}));
-  saActions.push({type:"submit"}); saActions.push({type:"branding"});
-  const N=saActions.length;
-  const arc=(2*Math.PI/N)*0.9;                 // Breite (Winkel) je Plakat/Tür
-  const yMid=baseTop+BH*0.52, ph=BH*0.80;
-  const doorAng=saActions.findIndex(a=>a.type==="submit")/N*Math.PI*2;
-  const dBot=baseTop+0.02, dTop=baseTop+BH*0.66; // Tür-Öffnung (Höhe)
+  // Sockel
+  const b1=new T.Mesh(new T.CylinderGeometry(1.32,1.42,.22,48),matBody); b1.position.y=.11; saScene.add(b1);
+  const b2=new T.Mesh(new T.CylinderGeometry(1.14,1.32,.20,48),matBody); b2.position.y=.32; saScene.add(b2);
+  // Der Ring endet genau da, wo das untere Plakat anfängt. Bis v16 stand er 10
+  // Hundertstel zu hoch und schnitt die Adresszeile ab — oben, am Ornamentband,
+  // war sie zu lesen, unten nicht.
+  const b3=new T.Mesh(new T.CylinderGeometry(CM_R+.03,1.14,.14,48),matAcc);
+  b3.position.y=CM_BASE-.07; saScene.add(b3);
 
-  // Korpus: Tür-Sektor im Mittelband ausgespart, oben & unten voll
-  const up=new T.Mesh(new T.CylinderGeometry(R,R,bodyTop-dTop,64,1,true),matBody); up.position.y=(dTop+bodyTop)/2; gr.add(up);
-  if(dBot-baseTop>0.005){ const lo=new T.Mesh(new T.CylinderGeometry(R,R,dBot-baseTop,64,1,true),matBody); lo.position.y=(baseTop+dBot)/2; gr.add(lo); }
-  const mid=new T.Mesh(new T.CylinderGeometry(R,R,dTop-dBot,64,1,true,doorAng+arc/2,2*Math.PI-arc),matBody);
-  mid.position.y=(dBot+dTop)/2; gr.add(mid);
+  // Die zwei Plakatbänder, dazwischen das Ornament
+  const yBot = CM_BASE + CM_BAND_H/2;
+  const yOrn = CM_BASE + CM_BAND_H + CM_ORN/2;
+  const yTop = CM_BASE + CM_BAND_H + CM_ORN + CM_BAND_H/2;
+  const blank = new T.CanvasTexture(cmDrawAtlas([{type:"brand"},{type:"brand"},{type:"brand"},{type:"brand"}]));
+  const bandB = cmBandMesh(blank, yBot, CM_CELLS-1, 1.00);  // unten liegt die Tür als letzte Zelle
+  const bandT = cmBandMesh(blank, yTop, -1, 0.30);         // oben kommt kaum noch Bodenlicht an
+  saScene.add(bandB.mesh); saScene.add(bandT.mesh);
+  cmBands = [bandB, bandT];
 
-  // Gesims / Kuppel / Finial
-  const g1=new T.Mesh(new T.CylinderGeometry(1.12,R+.01,.16,64),matDome); g1.position.y=bodyTop+.08; gr.add(g1);
-  const tor=new T.Mesh(new T.TorusGeometry(1.10,.03,12,64),matAcc); tor.rotation.x=Math.PI/2; tor.position.y=bodyTop+.16; gr.add(tor);
-  const g2=new T.Mesh(new T.CylinderGeometry(1.06,1.12,.14,64),matDome); g2.position.y=bodyTop+.23; gr.add(g2);
-  const cTop=bodyTop+.30;
-  const pts=[[1.06,0],[1.10,.10],[1.05,.30],[.94,.58],[.78,.88],[.58,1.18],[.40,1.48],[.24,1.76],[.12,1.98],[.04,2.10],[0,2.15]].map(p=>new T.Vector2(p[0],p[1]*SA_DOME_SCALE));
-  const dome=new T.Mesh(new T.LatheGeometry(pts,64),matDome); dome.position.y=cTop; gr.add(dome);
-  const domeTop=cTop+2.15*SA_DOME_SCALE;
-  const ball=new T.Mesh(new T.SphereGeometry(.10,20,16),matAcc); ball.position.y=domeTop+.06; gr.add(ball);
-  const spike=new T.Mesh(new T.ConeGeometry(.028,.34,16),matAcc); spike.position.y=domeTop+.30; gr.add(spike);
-
-  // Gekrümmte Plakate + eingelassene Tür
-  saActions.forEach((a,i)=>{
-    const ang=i/N*Math.PI*2;
-    if(a.type==="submit"){ saAddDoor(gr,ang,arc,dBot,dTop,R,matAcc,matDark); return; }
-    const pl=saCurved(saPoster(a),ang,arc,ph,R+0.008);
-    pl.position.y=yMid; pl.userData.action=a;
-    gr.add(pl); saPosters.push(pl);
+  cmOrnUni = {uMap:{value:blank}, uHasMap:{value:0}, uNight:{value:cmNight}, uLight:{value:cmLightDir()}};
+  const orn = new T.Mesh(new T.CylinderGeometry(CM_R*1.035, CM_R*1.035, CM_ORN, 200, 1, true),
+    new T.ShaderMaterial({uniforms:cmOrnUni, vertexShader:CM_VERT, fragmentShader:CM_ORN_FRAG, side:T.FrontSide}));
+  orn.position.y = yOrn; saScene.add(orn);
+  const rimMat = new T.MeshBasicMaterial({color:0x14140f});
+  [yOrn-CM_ORN/2, yOrn+CM_ORN/2].forEach(y=>{
+    const r=new T.Mesh(new T.CylinderGeometry(CM_R*1.045, CM_R*1.045, .02, 96, 1, true), rimMat);
+    r.position.y=y; saScene.add(r);
   });
 
-  saGroup=gr; saScene.add(gr);
-  saTargetY=(domeTop+0.5)*0.46;
+  // Spiegelung des unteren Bandes auf dem Boden (nur nachts sichtbar)
+  const muni = THREE.UniformsUtils.clone(cmBands[0].uni);
+  muni.uMap.value = blank; muni.uMirror.value = 1;
+  cmMirror = new T.Mesh(new T.CylinderGeometry(CM_R,CM_R,CM_BAND_H,120,1,true),
+    new T.ShaderMaterial({uniforms:muni, vertexShader:CM_VERT, fragmentShader:CM_FRAG,
+      transparent:true, depthWrite:false, side:T.FrontSide, extensions:{derivatives:true}}));
+  cmMirror.rotation.y=Math.PI; cmMirror.scale.y=-1;
+  cmMirror.position.y = -yBot;          // an der Bodenlinie gespiegelt, nicht daneben
+  cmMirror.userData.uni = muni;
+  saScene.add(cmMirror);
+
+  // Gesims, Kuppel, Finial — der viktorianische Spitz, unverändert aus v15
+  const bodyTop = CM_BASE + 2*CM_BAND_H + CM_ORN;
+  const g1=new T.Mesh(new T.CylinderGeometry(1.12,CM_R+.01,.16,64),matDome); g1.position.y=bodyTop+.08; saScene.add(g1);
+  const tor=new T.Mesh(new T.TorusGeometry(1.10,.03,12,64),matAcc); tor.rotation.x=Math.PI/2; tor.position.y=bodyTop+.16; saScene.add(tor);
+  const g2=new T.Mesh(new T.CylinderGeometry(1.06,1.12,.14,64),matDome); g2.position.y=bodyTop+.23; saScene.add(g2);
+  const cTop=bodyTop+CM_CORN;
+  const pts=[[1.06,0],[1.10,.10],[1.05,.30],[.94,.58],[.78,.88],[.58,1.18],[.40,1.48],[.24,1.76],[.12,1.98],[.04,2.10],[0,2.15]]
+    .map(p=>new T.Vector2(p[0],p[1]*CM_DOME));
+  const dome=new T.Mesh(new T.LatheGeometry(pts,64),matDome); dome.position.y=cTop; saScene.add(dome);
+  const domeTop=cTop+2.15*CM_DOME;
+  const ball=new T.Mesh(new T.SphereGeometry(.10,20,16),matAcc); ball.position.y=domeTop+.06; saScene.add(ball);
+  const spike=new T.Mesh(new T.ConeGeometry(.028,.34,16),matAcc); spike.position.y=domeTop+.30; saScene.add(spike);
+
+  // Lichthof und Lichtfleck am Boden
+  cmGlowUni = {uNight:{value:cmNight}, uCol:{value:new T.Color(0xbfa8ff)}};
+  const glow=new T.Mesh(new T.CylinderGeometry(CM_R*1.16, CM_R*1.16, (domeTop)*1.02, 96, 1, true),
+    new T.ShaderMaterial({uniforms:cmGlowUni, vertexShader:CM_VERT, fragmentShader:CM_GLOW_FRAG,
+      transparent:true, depthWrite:false, blending:T.AdditiveBlending, side:T.BackSide}));
+  glow.position.y = domeTop*0.51; saScene.add(glow);
+
+  const gc=document.createElement("canvas"); gc.width=gc.height=256;
+  const gx=gc.getContext("2d");
+  const rg=gx.createRadialGradient(128,128,6,128,128,128);
+  rg.addColorStop(0,"rgba(255,250,255,.85)"); rg.addColorStop(.35,"rgba(190,165,255,.30)");
+  rg.addColorStop(1,"rgba(0,0,0,0)");
+  gx.fillStyle=rg; gx.fillRect(0,0,256,256);
+  cmFloor=new T.Mesh(new T.PlaneGeometry(5.4,5.4),
+    new T.MeshBasicMaterial({map:new T.CanvasTexture(gc), transparent:true, depthWrite:false, blending:T.AdditiveBlending}));
+  cmFloor.rotation.x=-Math.PI/2; cmFloor.position.y=0.002; saScene.add(cmFloor);
+
+  // Kontaktschatten — nur am Tag. Nachts machen Lichtfleck und Spiegelung den Boden;
+  // am Tag stand die Säule bis v16 auf nichts, weil es in der Szene gar keinen Boden
+  // gibt, der einen Schatten fängt. Die Fläche liegt flach am Fuss und wird stark
+  // verkürzt gesehen, weil die Kamera waagrecht schaut — genau so sieht ein Schatten
+  // aus, wenn man vor einer Säule steht. Darum ist sie in der Tiefe schmaler als in
+  // der Breite: nach dem Verkürzen ergibt das wieder eine runde Lache.
+  const sc=document.createElement("canvas"); sc.width=sc.height=256;
+  const sx=sc.getContext("2d");
+  const sg=sx.createRadialGradient(128,128,4,128,128,128);
+  sg.addColorStop(0,   "rgba(36,30,22,.60)");
+  sg.addColorStop(.40, "rgba(46,39,29,.32)");
+  sg.addColorStop(.72, "rgba(58,50,38,.10)");
+  sg.addColorStop(1,   "rgba(58,50,38,0)");
+  sx.fillStyle=sg; sx.fillRect(0,0,256,256);
+  cmShadow=new T.Mesh(new T.PlaneGeometry(5.2,3.0),
+    new T.MeshBasicMaterial({map:new T.CanvasTexture(sc), transparent:true, depthWrite:false}));
+  // Etwas nach links und nach hinten versetzt, weil die Lampe von vorne rechts oben
+  // steht — ein mittig sitzender Schatten sieht nach Studio aus, nicht nach Strasse.
+  cmShadow.rotation.x=-Math.PI/2;
+  cmShadow.position.set(-0.30, 0.001, -0.14); saScene.add(cmShadow);
+
+  saTotalH = domeTop + 0.52;   // bis zur Spitze des Finials, nicht nur bis zur Kuppel
+  cmFill();          // Plakate nachladen und einsetzen
 }
 
+// Atlas bauen und in die Bänder hängen. Läuft asynchron, weil die Flyer geladen werden —
+// bis dahin steht die Säule mit dem 2BE-Plakat da, statt leer zu bleiben.
+function cmFill(){
+  const cells = cmCells;
+  cmAtlases(cells, (cvB, cvT)=>{
+    if(!cmBands.length) return;
+    const mk = cv => { const x=new THREE.CanvasTexture(cv);
+      x.wrapS=x.wrapT=THREE.ClampToEdgeWrapping;
+      x.minFilter=THREE.LinearMipmapLinearFilter; x.magFilter=THREE.LinearFilter;
+      x.anisotropy=saRenderer.capabilities.getMaxAnisotropy(); x.needsUpdate=true; return x; };
+    const tB=mk(cvB), tT=mk(cvT);
+    cmBands[0].uni.uMap.value=tB;
+    cmBands[1].uni.uMap.value=tT;
+    if(cmMirror) cmMirror.userData.uni.uMap.value=tB;
+    cmSetIdx(cmScroll, true);   // nicht 0 — beim Sprachwechsel steht man irgendwo
+  });
+}
+
+/* ---------------- Szene, Kamera, Licht ---------------- */
+let saTotalH = 6;
 function saBuild(){
   const T=THREE;
   saScene=new T.Scene();
   saCam=new T.PerspectiveCamera(42,1,0.1,100);
   saRenderer=new T.WebGLRenderer({antialias:true,alpha:true});
   saRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  saRenderer.toneMapping=T.ACESFilmicToneMapping; saRenderer.toneMappingExposure=1.12;
+  saRenderer.toneMapping=T.ACESFilmicToneMapping; saRenderer.toneMappingExposure=1.10;
   (saHost || $("saScene")).appendChild(saRenderer.domElement);
-  saScene.add(new T.HemisphereLight(0xffffff,0x2a2438,0.6));
+  // Eine winzige Umgebung: Himmel oben, warmer Boden unten. three.js rechnet Metall
+  // fast nur aus Spiegelungen — ohne etwas zum Spiegeln blieben Finial, Kugel und
+  // Ring dunkel. 64×32 Pixel genügen, weil das PMREM sie ohnehin weichzeichnet.
+  const ec=document.createElement("canvas"); ec.width=64; ec.height=32;
+  const ex=ec.getContext("2d");
+  const eg=ex.createLinearGradient(0,0,0,32);
+  eg.addColorStop(0,"#E8EEF2"); eg.addColorStop(.48,"#CFD6D4");
+  eg.addColorStop(.52,"#8E8676"); eg.addColorStop(1,"#4A4338");
+  ex.fillStyle=eg; ex.fillRect(0,0,64,32);
+  const eTex=new T.CanvasTexture(ec); eTex.mapping=T.EquirectangularReflectionMapping;
+  const pm=new T.PMREMGenerator(saRenderer); pm.compileEquirectangularShader();
+  // Bewusst NICHT saScene.environment: das hätte auch Korpus und Kuppel aufgehellt,
+  // und zwar nachts genauso wie am Tag. Nur das Metall bekommt etwas zum Spiegeln.
+  cmEnv = pm.fromEquirectangular(eTex).texture;
+  pm.dispose(); eTex.dispose();
+
+  // Der Boden wirft am Tag warm zurück, nachts violett. Bei uNight = 1 stehen wieder
+  // genau die Werte von v16 — geändert hat sich nur der Tag.
+  cmGndDay=new T.Color(0x7A6E5C); cmGndNight=new T.Color(0x2a2438);
+  cmHemi=new T.HemisphereLight(0xffffff,0x2a2438,0.6); saScene.add(cmHemi);
   saScene.add(new T.AmbientLight(0xffffff,0.25));
-  const key=new T.DirectionalLight(0xfff2e0,1.1); key.position.set(6,11,8); saScene.add(key);
-  const rim=new T.DirectionalLight(0x9d6bff,0.5); rim.position.set(-4,6,-8); saScene.add(rim); // violetter Rand
+  cmKey=new T.DirectionalLight(0xfff2e0,1.1); cmKey.position.set(6,11,8); saScene.add(cmKey);
+  const rim=new T.DirectionalLight(0x9d6bff,0.5); rim.position.set(-4,6,-8); saScene.add(rim);
+  cmNight = cmNightT = (currentTheme()==="dark") ? 1 : 0;
   saBuildColumn();
   saResize(); addEventListener("resize",saResize);
-  saInput();
+  cmBindDrag(saRenderer.domElement);
   saReady=true;
-}
-function saTick(ts){
-  if(!saOpen){ saRaf=null; return; }
-  if(saGroup && !saDragging){
-    if((ts - saLastTouch) > SA_IDLE_DELAY){
-      saVel += (SA_IDLE_SPEED - saVel)*0.02;   // nach 3 s sanft auf langsame Dauerdrehung
-    } else {
-      saVel *= 0.90;                            // frisch berührt: Restschwung ausrollen, dann Stillstand
-    }
-    saGroup.rotation.y += saVel;
-  }
-  saCam.position.set(0,saTargetY+1.4,saCamDist);
-  saCam.lookAt(0,saTargetY,0);
-  saRenderer.render(saScene,saCam);
-  saRaf=requestAnimationFrame(saTick);
 }
 function saResize(){
   if(!saRenderer) return;
   const host = saHost || $("saScene"); if(!host) return;
   const w=host.clientWidth, h=host.clientHeight;
   if(!w||!h) return;
-  saRenderer.setSize(w,h,false); saCam.aspect=w/h; saCam.updateProjectionMatrix();
+  saRenderer.setSize(w,h,false);
+  const aspect=w/h;
+  saCam.aspect=aspect;
+  const tan=Math.tan(saCam.fov*Math.PI/360);   // fov ist die senkrechte Öffnung
+  // Ins Bild gehören: unten etwas Boden für die Spiegelung, oben der ganze Spitz.
+  // Die Kamera steht auf halber Höhe — eine Säule schaut man frontal an, nicht von oben.
+  const mid=(saTotalH-CM_AIR)/2, half=(saTotalH+CM_AIR)/2;
+  let d = half/tan;                            // Höhe passt
+  d = Math.max(d, (CM_R*1.35)/(tan*aspect));   // auf schmalen Geräten passt auch die Breite
+  saCam.position.set(0, mid, d);
+  saCam.lookAt(0, mid, 0);
+  saCam.updateProjectionMatrix();
 }
-function saPtrDist(){ const p=[...saPtrs.values()]; return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); }
-function saInput(){
-  const el=saRenderer.domElement;
-  el.addEventListener("pointerdown",ev=>{
-    saLastTouch=performance.now();
-    saPtrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
-    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
-    if(saPtrs.size===1){ saDragging=true; saMoved=false; saLastX=ev.clientX; saDownX=ev.clientX; saDownY=ev.clientY; }
-    else if(saPtrs.size===2){ saDragging=false; saPinchD=saPtrDist(); }
+
+/* ---------------- Wischen ---------------- */
+// Ein Daumenwisch über ein gutes Drittel der Breite = ein Paar weiter.
+function cmBindDrag(el){
+  const SWIPE=0.34;
+  let id=null, x0=0, y0=0, s0=0, t0=0, lastX=0, lastT=0, vel=0, moved=0;
+  el.addEventListener("pointerdown", e=>{
+    id=e.pointerId; x0=lastX=e.clientX; y0=e.clientY; s0=cmScroll;
+    t0=lastT=performance.now(); vel=0; moved=0;
+    cmTarget=cmScroll; cmLastTouch=performance.now();
+    try{ el.setPointerCapture(id); }catch(err){}
   });
-  el.addEventListener("pointermove",ev=>{
-    if(saPtrs.size>=1) saLastTouch=performance.now();
-    if(saPtrs.has(ev.pointerId)) saPtrs.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
-    if(saPtrs.size>=2){ const d=saPtrDist(); if(saPinchD&&d) saCamDist=Math.max(7,Math.min(20,saCamDist*(saPinchD/d))); saPinchD=d; saMoved=true; return; }
-    if(!saDragging) return;
-    const dx=ev.clientX-saLastX; saLastX=ev.clientX;
-    if(Math.abs(ev.clientX-saDownX)+Math.abs(ev.clientY-saDownY)>6) saMoved=true;
-    if(saGroup) saGroup.rotation.y+=dx*0.008; saVel=dx*0.008;
+  el.addEventListener("pointermove", e=>{
+    if(e.pointerId!==id) return;
+    const dx=e.clientX-x0, now=performance.now();
+    moved=Math.max(moved, Math.hypot(dx, e.clientY-y0));
+    const dt=Math.max(8, now-lastT);
+    vel = 0.7*vel + 0.3*((e.clientX-lastX)/dt);
+    lastX=e.clientX; lastT=now;
+    cmScroll = cmTarget = s0 - dx/(el.clientWidth*SWIPE);
+    cmLastTouch=now;
   });
-  const up=ev=>{
-    saLastTouch=performance.now();
-    saPtrs.delete(ev.pointerId);
-    if(saPtrs.size<2) saPinchD=0;
-    if(saPtrs.size===0){ if(saDragging && !saMoved) saPick(ev); saDragging=false; }
+  const up=e=>{
+    if(e.pointerId!==id) return; id=null;
+    cmLastTouch=performance.now();
+    if(moved<7 && performance.now()-t0<400){ cmPick(e); return; }
+    const carry=Math.max(-2.5, Math.min(2.5, -vel*el.clientWidth*0.0022/SWIPE));
+    cmTarget = Math.round(cmScroll + carry);
   };
-  el.addEventListener("pointerup",up);
-  el.addEventListener("pointercancel",up);
-  el.addEventListener("wheel",ev=>{ saLastTouch=performance.now(); ev.preventDefault(); saCamDist=Math.max(7,Math.min(20,saCamDist+ev.deltaY*0.01)); },{passive:false});
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
 }
-function saPick(ev){
+// Welche Zelle wurde angetippt? Dieselbe Rechnung wie im Shader, sonst öffnet sich
+// beim Wischen zwischen zwei Plakaten das falsche Event.
+function cmPick(ev){
+  if(!cmBands.length) return;
   const r=saRenderer.domElement.getBoundingClientRect();
   const nd={x:((ev.clientX-r.left)/r.width)*2-1, y:-((ev.clientY-r.top)/r.height)*2+1};
   const rc=new THREE.Raycaster(); rc.setFromCamera(nd,saCam);
-  const hit=rc.intersectObjects(saPosters,false)[0];
-  if(!hit) return;
-  const a=hit.object.userData.action;
-  if(a.type==="event"){ closeSaeule(); openDetail(a.id); }   // direkt zum Event
-  else if(a.type==="submit"){ closeSaeule(); openSubmit(); }  // Tür → Kontakt/Einreichen
+  const hit=rc.intersectObjects(cmBands.map(b=>b.mesh),false)[0];
+  if(!hit || !hit.uv) return;
+  const band = hit.object === cmBands[0].mesh ? "bottom" : "top";
+  const g = (hit.uv.x-0.5)*(360/CM_ARC) + cmShown + 0.5;   // cmShown, nicht cmTarget:
+                                                           // sonst trifft ein Tipp waehrend
+                                                           // des Peeks die Nachbarzelle
+  const ix = ((Math.floor(g) % CM_CELLS) + CM_CELLS) % CM_CELLS;
+  const cell = cmCells[band][ix];
+  if(!cell) return;
+  if(cell.type==="event"){ closeSaeule(); openDetail(cell.ev.id); }
+  else if(cell.type==="door"){ closeSaeule(); openSubmit(); }
 }
-// Neu bauen bei Sprach-/Themawechsel (Plakat-Texte & Tönung)
+
+/* ---------------- Untertitel unter der Säule ---------------- */
+function cmSetIdx(i, force){
+  const pos=((Math.round(i)%CM_CELLS)+CM_CELLS)%CM_CELLS;
+  if(pos===cmIdx && !force) return;
+  cmIdx=pos;
+  const cell = cmCells.bottom[pos];
+  const el = saHost && saHost.parentElement ? saHost.parentElement.querySelector(".sa-hint") : null;
+  if(!el) return;
+  if(cell && cell.type==="door") el.textContent = t("doorHint");
+  else el.textContent = t("saHint");
+}
+
+/* ---------------- Der Takt ---------------- */
+function saTick(ts){
+  if(!saOpen){ saRaf=null; return; }
+  const now = ts || performance.now();
+  const dt = Math.min(64, now - (cmLast||now)); cmLast = now;
+
+  // Tag/Nacht folgt dem Erscheinungsbild der App, nicht einer zweiten Sonnenrechnung
+  cmNightT = (currentTheme()==="dark") ? 1 : 0;
+  if(Math.abs(cmNight-cmNightT) > 0.002) cmNight += (cmNightT-cmNight)*(1-Math.exp(-dt/420));
+
+  // Nach Ruhe ein kurzer Peek: das nächste Paar schiebt sich an und federt zurück.
+  // Wer weniger Bewegung eingestellt hat, bekommt ihn nicht — wie beim Live-Band.
+  let peek = 0;
+  const idle = now - cmLastTouch;
+  if(!REDUCED_MOTION && idle > CM_IDLE && Math.abs(cmTarget-cmScroll) < 0.01){
+    const phase = (idle - CM_IDLE) % CM_IDLE_EVERY;
+    if(phase < 900) peek = Math.sin(phase/900*Math.PI) * 0.10;
+  }
+
+  cmScroll += (cmTarget-cmScroll)*(1-Math.exp(-dt/78));
+  cmShown = cmScroll + peek;
+  cmUni.forEach(u=>{ u.uScroll.value = cmShown; u.uNight.value = cmNight; u.uTime.value = now/1000; });
+  if(cmMirror){
+    const mu=cmMirror.userData.uni;
+    mu.uScroll.value = cmShown; mu.uNight.value = cmNight; mu.uTime.value = now/1000;
+    cmMirror.visible = cmNight > 0.12;
+  }
+  if(cmOrnUni) cmOrnUni.uNight.value = cmNight;
+  if(cmGlowUni) cmGlowUni.uNight.value = cmNight;
+  if(cmFloor){ cmFloor.visible = cmNight > 0.12; cmFloor.material.opacity = cmNight; }
+  if(cmShadow){ const day = 1-cmNight; cmShadow.visible = day > 0.02; cmShadow.material.opacity = day; }
+  if(cmHemi){
+    cmHemi.groundColor.copy(cmGndDay).lerp(cmGndNight, cmNight);
+    cmKey.intensity = 1.30 - 0.20*cmNight;   // bei Nacht wieder die 1.1 aus v16
+  }
+
+  if(Math.abs(cmTarget-cmScroll) < 0.35) cmSetIdx(cmScroll);
+
+  saRenderer.render(saScene,saCam);
+  saRaf=requestAnimationFrame(saTick);
+}
+
+// Neu zeichnen, wenn sich die Sprache geändert hat. Tag/Nacht braucht das nicht —
+// das macht der Shader, deshalb bleibt der Atlas beim Umschalten stehen.
 function saRefresh(){
   if(!saReady) return;
-  const rot = saGroup ? saGroup.rotation.y : 0;
-  saBuildColumn();
-  if(saGroup) saGroup.rotation.y=rot;
+  if(cmBuiltLang !== LANG){ cmCells = cmLayout(); cmBuiltLang = LANG; cmFill(); }
+  // applyStaticI18n() hat den Hinweis gerade auf saHint zurückgesetzt — steht man vor
+  // der Tür, muss dort wieder der Tür-Text stehen
+  cmSetIdx(cmScroll, true);
 }
+
+/* ---------------- Ein- und Aushängen ---------------- */
 function loadThree(cb){
   if(window.THREE) return cb();
   const ex=document.getElementById("threejs");
@@ -2645,12 +3141,14 @@ function saOpenIn(host){
   loadThree(()=>{
     if(!saOpen) return;
     if(!saReady) saBuild(); else { saMount(host); saRefresh(); }
+    cmLastTouch = performance.now();
     if(!saRaf) saTick();
   });
 }
 function saStop(){
   saOpen = false;
   if(saRaf){ cancelAnimationFrame(saRaf); saRaf=null; }
+  cmLast = null;
 }
 function openSaeule(){
   $("saeule").classList.add("open");
@@ -2658,7 +3156,7 @@ function openSaeule(){
 }
 function closeSaeule(){
   $("saeule").classList.remove("open");
-  // Steht der Nutzer im 2BE-Tab auf Editor's Choice, laeuft die Saeule dort weiter
+  // Steht der Nutzer im 2BE-Tab auf Community, laeuft die Saeule dort weiter
   if(state.view==="saved" && savedTab==="editors") saOpenIn($("saSceneTab"));
   else saStop();
 }
